@@ -36,7 +36,7 @@ position = Vector2(30, 62)
 position = Vector2(-70, -18)
 
 [node name="ServingPlate" type="Area2D" parent="."]
-position = Vector2(218, 208)
+position = Vector2(342, 307)
 
 [node name="ServingPlate" parent="ServingPlate" instance=ExtResource("4_272bh")]
 position = Vector2(37, 271)
