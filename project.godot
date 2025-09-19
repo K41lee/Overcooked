@@ -11,4 +11,5 @@ config_version=5
 [application]
 
 config/name="Overcooked"
+run/main_scene="uid://ctmkxs56lmx33"
 config/features=PackedStringArray("4.5", "Forward Plus")
