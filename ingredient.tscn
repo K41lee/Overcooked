@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=3 uid="uid://b6o4j44lrq71h"]
+
+[ext_resource type="Script" uid="uid://bnn62dmbyag0u" path="res://ingredient.gd" id="1_11e83"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_wikgl"]
+radius = 86.28442
+
+[node name="Ingredient" type="Node2D"]
+position = Vector2(-1, 0)
+script = ExtResource("1_11e83")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -1)
+shape = SubResource("CircleShape2D_wikgl")

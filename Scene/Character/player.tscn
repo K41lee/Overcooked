@@ -1,0 +1,12 @@
+[gd_scene load_steps=2 format=3 uid="uid://ctmkxs56lmx33"]
+
+[ext_resource type="Texture2D" uid="uid://q5smwcdnqc33" path="res://Scene/Character/Sprite/Tmp.png" id="1_5trst"]
+
+[node name="Player" type="CharacterBody2D"]
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("1_5trst")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+
+[node name="PickupArea" type="Area2D" parent="."]
