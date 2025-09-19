@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://b6o4j44lrq71h"]
 
-[ext_resource type="Script" uid="uid://bnn62dmbyag0u" path="res://ingredient.gd" id="1_11e83"]
+[ext_resource type="Script" uid="uid://bnn62dmbyag0u" path="res://Scene/Item/Food/ingredient.gd" id="1_11e83"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_wikgl"]
 radius = 86.28442

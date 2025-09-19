@@ -1,16 +1,39 @@
-[gd_scene format=3 uid="uid://cfwit30b4ygwb"]
+[gd_scene load_steps=7 format=3 uid="uid://cfwit30b4ygwb"]
+
+[ext_resource type="Script" uid="uid://b3nmxi6an12yf" path="res://main.gd" id="1_ig7tw"]
+[ext_resource type="PackedScene" uid="uid://ctmkxs56lmx33" path="res://Scene/Character/player.tscn" id="2_lquwl"]
+[ext_resource type="PackedScene" uid="uid://cm6cmynfbh5pj" path="res://Scene/furniture/cutting_board.tscn" id="3_7mycd"]
+[ext_resource type="PackedScene" uid="uid://cpy7x5bu22keu" path="res://Scene/furniture/IngredientSpawner.tscn" id="3_272bh"]
+[ext_resource type="PackedScene" uid="uid://bpaeaht1khxgi" path="res://Scene/furniture/serving_plate.tscn" id="4_272bh"]
+[ext_resource type="PackedScene" uid="uid://dr3mrc7y22nex" path="res://Scene/Background/ui.tscn" id="5_5vw27"]
 
 [node name="Main" type="Node2D"]
+position = Vector2(148, 76)
+script = ExtResource("1_ig7tw")
 
 [node name="TileMap" type="TileMap" parent="."]
 format = 2
 
 [node name="Player" type="Node2D" parent="."]
 
+[node name="Player" parent="Player" instance=ExtResource("2_lquwl")]
+position = Vector2(555, 318)
+
 [node name="IngredientSpawner" type="Node2D" parent="."]
+
+[node name="IngredientSpawner" parent="IngredientSpawner" instance=ExtResource("3_272bh")]
 
 [node name="CuttingBoard" type="Area2D" parent="."]
 
-[node name="ServingPlate" type="Area2D" parent="."]
+[node name="Area2D" parent="CuttingBoard" instance=ExtResource("3_7mycd")]
+position = Vector2(-70, -18)
 
-[node name="CanvasLayer" type="CanvasLayer" parent="ServingPlate"]
+[node name="ServingPlate" type="Area2D" parent="."]
+position = Vector2(-62, 90)
+
+[node name="ServingPlate" parent="ServingPlate" instance=ExtResource("4_272bh")]
+position = Vector2(37, 271)
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="UI" parent="CanvasLayer" instance=ExtResource("5_5vw27")]

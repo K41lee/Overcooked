@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://8ycd8ips1q5u"]
+
+[sub_resource type="TileSet" id="TileSet_c0vyu"]
+tile_size = Vector2i(126, 80)
+
+[node name="KitchenTileMap" type="TileMap"]
+tile_set = SubResource("TileSet_c0vyu")
+format = 2

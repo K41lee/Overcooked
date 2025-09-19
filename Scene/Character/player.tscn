@@ -7,6 +7,6 @@
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = ExtResource("1_5trst")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-
 [node name="PickupArea" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]

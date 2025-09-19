@@ -1,0 +1,5 @@
+[gd_scene format=3 uid="uid://cpy7x5bu22keu"]
+
+[node name="IngredientSpawner" type="Area2D"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
