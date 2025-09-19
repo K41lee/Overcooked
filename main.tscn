@@ -22,7 +22,7 @@ position = Vector2(107, 116)
 position = Vector2(-142, 643)
 
 [node name="Player" parent="Player" instance=ExtResource("2_lquwl")]
-position = Vector2(555, 318)
+position = Vector2(-134, -661)
 
 [node name="IngredientSpawner" type="Node2D" parent="."]
 position = Vector2(82, 3)
