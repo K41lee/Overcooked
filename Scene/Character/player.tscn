@@ -1,8 +1,8 @@
 [gd_scene load_steps=6 format=3 uid="uid://ctmkxs56lmx33"]
 
 [ext_resource type="Texture2D" uid="uid://c0hjr7onql7i2" path="res://Scene/Character/Sprite/New Piskel.png" id="1_5trst"]
-[ext_resource type="Script" uid="uid://qxo0ce3mskbe" path="res://Scene/Character/path_follow_2d.gd" id="1_087al"]
-[ext_resource type="Script" uid="uid://dnwuhhr5jccq1" path="res://Scene/Character/player.gd" id="1_vmgdj"]
+[ext_resource type="Script" uid="uid://qxo0ce3mskbe" path="res://Scene/Character/Script/path_follow_2d.gd" id="1_087al"]
+[ext_resource type="Script" uid="uid://dnwuhhr5jccq1" path="res://Scene/Character/Script/player.gd" id="1_vmgdj"]
 
 [sub_resource type="Curve2D" id="Curve2D_5trst"]
 _data = {
