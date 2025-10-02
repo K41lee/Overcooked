@@ -8,7 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://cpy7x5bu22keu" path="res://Scene/furniture/IngredientSpawner.tscn" id="3_272bh"]
 [ext_resource type="PackedScene" uid="uid://bpaeaht1khxgi" path="res://Scene/furniture/serving_plate.tscn" id="4_272bh"]
 [ext_resource type="PackedScene" uid="uid://dr3mrc7y22nex" path="res://Scene/Background/ui.tscn" id="5_5vw27"]
-[ext_resource type="Script" uid="uid://curmwaet56ad3" path="res://cuisinier.gd" id="9_4c57u"]
+[ext_resource type="Script" uid="uid://cb6gbl6wdp7o6" path="res://cuisinier.gd" id="9_4c57u"]
 [ext_resource type="Texture2D" uid="uid://c0hjr7onql7i2" path="res://Scene/Character/Sprite/New Piskel.png" id="9_kek77"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_4c57u"]
@@ -26,29 +26,35 @@ position = Vector2(107, 116)
 script = ExtResource("3_5vw27")
 
 [node name="Player" type="Node2D" parent="."]
-visible = false
 position = Vector2(-142, 643)
 
 [node name="Player" parent="Player" instance=ExtResource("2_lquwl")]
 position = Vector2(-134, -661)
+speed = null
 
 [node name="IngredientSpawner" type="Node2D" parent="."]
 position = Vector2(82, 3)
 
 [node name="IngredientSpawner" parent="IngredientSpawner" instance=ExtResource("3_272bh")]
 
-[node name="CuttingBoard" parent="." instance=ExtResource("3_7mycd")]
-position = Vector2(-40, 44)
+[node name="CuttingBoard" type="Area2D" parent="."]
+position = Vector2(30, 62)
 
-[node name="ServingPlate" parent="." instance=ExtResource("4_272bh")]
-position = Vector2(379, 578)
+[node name="Area2D" parent="CuttingBoard" instance=ExtResource("3_7mycd")]
+position = Vector2(-70, -18)
+
+[node name="ServingPlate" type="Area2D" parent="."]
+position = Vector2(342, 307)
+
+[node name="ServingPlate" parent="ServingPlate" instance=ExtResource("4_272bh")]
+position = Vector2(37, 271)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
 [node name="UI" parent="CanvasLayer" instance=ExtResource("5_5vw27")]
 script = null
 
-[node name="Cuisinier" type="CharacterBody2D" parent="."]
+[node name="Cuisinier" type="RigidBody2D" parent="."]
 script = ExtResource("9_4c57u")
 
 [node name="Sprite2D" type="Sprite2D" parent="Cuisinier"]
