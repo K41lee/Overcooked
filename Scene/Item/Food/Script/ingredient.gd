@@ -1,5 +1,6 @@
 extends Node2D
 
+
 var state : String = "raw"
 var is_held : bool = false
 var holder : Node = null  # Le joueur qui porte cet ingrédient

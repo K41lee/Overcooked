@@ -1,0 +1,18 @@
+[gd_scene load_steps=5 format=3 uid="uid://bj1qj3qbthqqj"]
+
+[ext_resource type="Script" uid="uid://b4m6kmocrvgpr" path="res://Scene/furniture/Spawner/Script/ingredient_spawner.gd" id="1_1ayrb"]
+[ext_resource type="PackedScene" uid="uid://8s6tfrguovh7" path="res://Scene/Item/Food/scene/tomate.tscn" id="2_y8jfo"]
+[ext_resource type="Texture2D" uid="uid://baklha5rb36eh" path="res://Scene/furniture/Sprite/FoodSpawnerTest.png" id="3_opfuu"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hkq1m"]
+
+[node name="SpawnPoint" type="Area2D"]
+position = Vector2(270, 164)
+script = ExtResource("1_1ayrb")
+ingredient_scene = ExtResource("2_y8jfo")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_hkq1m")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("3_opfuu")
