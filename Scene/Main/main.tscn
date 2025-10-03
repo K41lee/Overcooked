@@ -53,7 +53,7 @@ position = Vector2(218, 51)
 [node name="SpawnerSalade" parent="." instance=ExtResource("9_6rqp4")]
 position = Vector2(439, 51)
 
-[node name="SpawnPoint" parent="." instance=ExtResource("10_f3d4m")]
+[node name="SpawnerOignon" parent="." instance=ExtResource("10_f3d4m")]
 position = Vector2(330, 50)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]

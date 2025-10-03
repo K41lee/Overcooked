@@ -1,0 +1,16 @@
+[gd_scene load_steps=4 format=3 uid="uid://crukcicqf3m3g"]
+
+[ext_resource type="Script" uid="uid://curmwaet56ad3" path="res://Scene/Character/Script/cuisinier.gd" id="1_njyp7"]
+[ext_resource type="Texture2D" uid="uid://c0hjr7onql7i2" path="res://Scene/Character/Sprite/New Piskel.png" id="2_v1wrl"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_8pt7v"]
+
+[node name="Cuisinier" type="CharacterBody2D"]
+script = ExtResource("1_njyp7")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture_filter = 1
+texture = ExtResource("2_v1wrl")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CapsuleShape2D_8pt7v")
