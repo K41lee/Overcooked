@@ -6,7 +6,7 @@
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hkq1m"]
 
-[node name="SpawnPoint" type="Area2D"]
+[node name="BacAOignon" type="Area2D"]
 position = Vector2(270, 164)
 script = ExtResource("1_wfnp4")
 ingredient_scene = ExtResource("2_wh0oo")
@@ -16,3 +16,5 @@ shape = SubResource("RectangleShape2D_hkq1m")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = ExtResource("3_xf6mn")
+
+[node name="SpawnPoint" type="Area2D" parent="."]
