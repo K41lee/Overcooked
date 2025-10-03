@@ -40,6 +40,12 @@ position = Vector2(379, 578)
 [node name="SpawnerTomate" parent="." instance=ExtResource("8_mkk67")]
 position = Vector2(218, 51)
 
+[node name="SpawnerSalade" parent="." instance=ExtResource("9_6rqp4")]
+position = Vector2(439, 51)
+
+[node name="SpawnerOignon" parent="." instance=ExtResource("10_f3d4m")]
+position = Vector2(330, 50)
+
 [node name="Cuisinier" type="CharacterBody2D" parent="."]
 script = ExtResource("7_ymll4")
 
@@ -49,15 +55,6 @@ texture = ExtResource("8_ryx2q")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Cuisinier"]
 shape = SubResource("CapsuleShape2D_4c57u")
-
-[node name="SpawnerTomate" parent="." instance=ExtResource("8_mkk67")]
-position = Vector2(218, 51)
-
-[node name="SpawnerSalade" parent="." instance=ExtResource("9_6rqp4")]
-position = Vector2(439, 51)
-
-[node name="SpawnerOignon" parent="." instance=ExtResource("10_f3d4m")]
-position = Vector2(330, 50)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
