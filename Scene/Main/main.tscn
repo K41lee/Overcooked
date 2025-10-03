@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://cfwit30b4ygwb"]
+[gd_scene load_steps=13 format=3 uid="uid://cfwit30b4ygwb"]
 
 [ext_resource type="Script" uid="uid://b3nmxi6an12yf" path="res://Scene/Main/main.gd" id="1_otq45"]
 [ext_resource type="PackedScene" uid="uid://ctmkxs56lmx33" path="res://Scene/Character/player.tscn" id="2_mkk67"]
@@ -8,7 +8,9 @@
 [ext_resource type="Script" uid="uid://curmwaet56ad3" path="res://Scene/Character/Script/cuisinier.gd" id="7_ymll4"]
 [ext_resource type="PackedScene" uid="uid://bj1qj3qbthqqj" path="res://Scene/furniture/Spawner/Scene/SpawnerTomate.tscn" id="8_mkk67"]
 [ext_resource type="Texture2D" uid="uid://c0hjr7onql7i2" path="res://Scene/Character/Sprite/New Piskel.png" id="8_ryx2q"]
+[ext_resource type="PackedScene" uid="uid://dpngk3ie1hbb0" path="res://Scene/furniture/Spawner/Scene/SpawnerSalade.tscn" id="9_6rqp4"]
 [ext_resource type="PackedScene" uid="uid://bi726se5gvxhb" path="res://Scene/Background/Background.tscn" id="9_mkk67"]
+[ext_resource type="PackedScene" uid="uid://bw882osdsurnn" path="res://Scene/furniture/Spawner/Scene/SpawnerOignon.tscn" id="10_f3d4m"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_4c57u"]
 
@@ -47,6 +49,15 @@ texture = ExtResource("8_ryx2q")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Cuisinier"]
 shape = SubResource("CapsuleShape2D_4c57u")
+
+[node name="SpawnerTomate" parent="." instance=ExtResource("8_mkk67")]
+position = Vector2(218, 51)
+
+[node name="SpawnerSalade" parent="." instance=ExtResource("9_6rqp4")]
+position = Vector2(439, 51)
+
+[node name="SpawnPoint" parent="." instance=ExtResource("10_f3d4m")]
+position = Vector2(330, 50)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
