@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ck7f2574h2kuq"
-path="res://.godot/imported/CaisseTomate.png-52f18fc6a43823ba3797f417461a724d.ctex"
+uid="uid://d0p07use73uqi"
+path="res://.godot/imported/BacASalade.png-2fdd71e50ae61a3552e4560c81433c20.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Scene/furniture/Sprite/CaisseTomate.png"
-dest_files=["res://.godot/imported/CaisseTomate.png-52f18fc6a43823ba3797f417461a724d.ctex"]
+source_file="res://Scene/furniture/Sprite/BacASalade.png"
+dest_files=["res://.godot/imported/BacASalade.png-2fdd71e50ae61a3552e4560c81433c20.ctex"]
 
 [params]
 

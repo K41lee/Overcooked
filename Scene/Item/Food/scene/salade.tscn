@@ -1,9 +1,11 @@
-[gd_scene load_steps=2 format=3 uid="uid://nukyayrdw8ry"]
+[gd_scene load_steps=3 format=3 uid="uid://nukyayrdw8ry"]
 
 [ext_resource type="Script" uid="uid://bq5pbrgsa34yo" path="res://Scene/Item/Food/Script/IngredientGenerale.gd" id="1_g0ivs"]
+[ext_resource type="Texture2D" uid="uid://b0vy1viramvi1" path="res://Scene/Item/Food/Sprite/Salade.png" id="2_lnudy"]
 
 [node name="salade" type="Node2D"]
 script = ExtResource("1_g0ivs")
 ingredient_name = "salade"
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_lnudy")
