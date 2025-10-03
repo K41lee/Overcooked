@@ -36,6 +36,9 @@ func Idle():
 	velocity = Vector2(0.0,0.0)
 	request_ingredient($SpawnerTomate)
 
+func Cook():
+	velocity = Vector2.ZERO
+	#quand il arrive sur une plance ou une cuisson l'agent attendra , puis il devra pickup l'item transfo
 
 
 func request_ingredient(spawner: Node) -> Node:

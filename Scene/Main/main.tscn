@@ -7,10 +7,10 @@
 [ext_resource type="PackedScene" uid="uid://dr3mrc7y22nex" path="res://Scene/Background/ui.tscn" id="6_8ao5t"]
 [ext_resource type="Script" uid="uid://curmwaet56ad3" path="res://Scene/Character/Script/cuisinier.gd" id="7_ymll4"]
 [ext_resource type="PackedScene" uid="uid://bj1qj3qbthqqj" path="res://Scene/furniture/Spawner/Scene/SpawnerTomate.tscn" id="8_mkk67"]
-[ext_resource type="Texture2D" uid="uid://c0hjr7onql7i2" path="res://Scene/Character/Sprite/New Piskel.png" id="8_ryx2q"]
 [ext_resource type="PackedScene" uid="uid://dpngk3ie1hbb0" path="res://Scene/furniture/Spawner/Scene/SpawnerSalade.tscn" id="9_6rqp4"]
 [ext_resource type="PackedScene" uid="uid://bi726se5gvxhb" path="res://Scene/Background/Background.tscn" id="9_mkk67"]
 [ext_resource type="PackedScene" uid="uid://bw882osdsurnn" path="res://Scene/furniture/Spawner/Scene/SpawnerOignon.tscn" id="10_f3d4m"]
+[ext_resource type="Texture2D" uid="uid://dxcwg3kjbgmm7" path="res://Scene/Character/Sprite/chaton_idle.png" id="10_phfrx"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_4c57u"]
 
@@ -51,7 +51,8 @@ script = ExtResource("7_ymll4")
 
 [node name="Sprite2D" type="Sprite2D" parent="Cuisinier"]
 texture_filter = 1
-texture = ExtResource("8_ryx2q")
+scale = Vector2(0.05, 0.05)
+texture = ExtResource("10_phfrx")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Cuisinier"]
 shape = SubResource("CapsuleShape2D_4c57u")
