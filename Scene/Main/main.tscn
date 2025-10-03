@@ -1,7 +1,6 @@
-[gd_scene load_steps=16 format=3 uid="uid://cfwit30b4ygwb"]
+[gd_scene load_steps=15 format=3 uid="uid://cfwit30b4ygwb"]
 
 [ext_resource type="Script" uid="uid://b3nmxi6an12yf" path="res://Scene/Main/main.gd" id="1_otq45"]
-[ext_resource type="PackedScene" uid="uid://ctmkxs56lmx33" path="res://Scene/Character/player.tscn" id="2_mkk67"]
 [ext_resource type="PackedScene" uid="uid://cm6cmynfbh5pj" path="res://Scene/furniture/cutting_board.tscn" id="4_f3d4m"]
 [ext_resource type="PackedScene" uid="uid://bpaeaht1khxgi" path="res://Scene/furniture/serving_plate.tscn" id="5_phfrx"]
 [ext_resource type="PackedScene" uid="uid://dr3mrc7y22nex" path="res://Scene/Background/ui.tscn" id="6_8ao5t"]
@@ -52,13 +51,6 @@ offset_left = -147.0
 offset_top = -74.0
 offset_right = 1003.0
 offset_bottom = 572.0
-
-[node name="Player" type="Node2D" parent="."]
-visible = false
-position = Vector2(-142, 643)
-
-[node name="Player" parent="Player" instance=ExtResource("2_mkk67")]
-position = Vector2(-134, -661)
 
 [node name="CuttingBoard" parent="." instance=ExtResource("4_f3d4m")]
 position = Vector2(-40, 44)

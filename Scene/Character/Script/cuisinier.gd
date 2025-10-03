@@ -5,29 +5,32 @@ var posCB: Vector2
 var direction
 var state = "idle"
 var states = ["idle","cook","move"]
+var targets = ["SpawnerTomate","SpawnerSalade","SpawnerOignon"]
 var held_ingredient : Node = null
 var target_node: Node = null
 var pos_target: Vector2
 var IdleNoScope = 0
-
-
+var test = randi_range(0,2)#tmp
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _physics_process(delta: float) -> void:
-	MoveToTarget("SpawnerTomate")
+	MoveToTarget(targets[test])
+	
 
 		
 func MoveToTarget(target : String) -> void:
 	var posCB = get_parent().get_node(target).global_position
 	var direction = (posCB - global_position)
 	# Seuil de proximité pour arrêter le mouvement (par exemple 5 pixels)
+	IdleNoScope = 0
 	if direction.length() > 5.0:
 		$AnimatedSprite2D.animation = "walk"
 		direction = direction.normalized()
 		velocity = direction * 150.0
 	else:
 		Idle()
+		
 	
 	move_and_slide()
 
@@ -38,6 +41,10 @@ func Idle():
 		velocity = Vector2(0.0,0.0)
 		$AnimatedSprite2D.animation = "idle"
 		IdleNoScope = IdleNoScope + 1
+		test = randi_range(0,2)#tmp
+		
+		
+		
 	
 
 func Cook():
