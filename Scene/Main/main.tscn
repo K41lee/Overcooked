@@ -37,6 +37,9 @@ position = Vector2(-40, 44)
 [node name="ServingPlate" parent="." instance=ExtResource("5_phfrx")]
 position = Vector2(379, 578)
 
+[node name="SpawnerTomate" parent="." instance=ExtResource("8_mkk67")]
+position = Vector2(218, 51)
+
 [node name="Cuisinier" type="CharacterBody2D" parent="."]
 script = ExtResource("7_ymll4")
 

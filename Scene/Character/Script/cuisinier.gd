@@ -1,6 +1,8 @@
 extends CharacterBody2D
 
 
+var held_ingredient : Node = null
+
 var linear_force = 5
 var posCB: Vector2
 var direction
@@ -48,11 +50,58 @@ func drop_ingredient(drop_position: Vector2):
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _physics_process(delta: float) -> void:
-	MoveToTarget("CuttingBoard")
+	
+	
+	MoveToTarget("SpawnerTomate")
 
+		
 func MoveToTarget(target : String) -> void:
-	posCB =  get_parent().get_node(target).global_position
-	direction = (posCB - global_position).normalized()
-	if global_position != posCB:
+	var posCB = get_parent().get_node(target).global_position
+	var direction = (posCB - global_position)
+	# Seuil de proximité pour arrêter le mouvement (par exemple 5 pixels)
+	if direction.length() > 5.0:
+		direction = direction.normalized()
 		velocity = direction * 150.0
-		move_and_slide()
+	else:
+		velocity = Vector2.ZERO
+	move_and_slide()
+
+
+
+func Idle():
+	velocity = Vector2(0.0,0.0)
+
+
+
+func request_ingredient(spawner: Node) -> Node:
+	if held_ingredient != null:
+		print("Agent a déjà un ingrédient.")
+		return null
+
+	var item = spawner.try_give_ingredient(self)
+	if item != null:
+		print("Agent a pris un ingrédient : ", item.name)
+	else:
+		print("Le spawner n’a rien donné.")
+	return item
+
+# ---------------------------------------------------
+# Pickup depuis le sol / zone autour du joueur
+func pickup_ingredient():
+	for body in $PickupArea.get_overlapping_bodies():
+		if body.is_in_group("Ingredients") and not body.is_held:
+			body.is_held = true
+			body.holder = self
+			held_ingredient = body
+			print("Agent a ramassé : ", body.name)
+			break
+
+# ---------------------------------------------------
+# Déposer l’ingrédient à une position donnée
+func drop_ingredient(drop_position: Vector2):
+	if held_ingredient != null:
+		held_ingredient.is_held = false
+		held_ingredient.holder = null
+		held_ingredient.global_position = drop_position
+		print("Agent a déposé : ", held_ingredient.name)
+		held_ingredient = null
