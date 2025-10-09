@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3 uid="uid://cf050axi7f06m"]
+
+[ext_resource type="Script" uid="uid://bai7wdqv764i" path="res://furniture/food/ingredient.gd" id="1_tgae5"]
+[ext_resource type="Texture2D" uid="uid://dr68xgvstonfb" path="res://assets/Viande.png" id="2_v10ro"]
+
+[node name="tomate" type="Node2D"]
+script = ExtResource("1_tgae5")
+type = "viande"
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_v10ro")

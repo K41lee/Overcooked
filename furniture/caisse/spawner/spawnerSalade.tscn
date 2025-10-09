@@ -1,0 +1,16 @@
+[gd_scene load_steps=4 format=3 uid="uid://6426a6dbyrdl"]
+
+[ext_resource type="Script" uid="uid://dqpqhxkh48b25" path="res://furniture/caisse/spawner/spawner.gd" id="1_gws0o"]
+[ext_resource type="PackedScene" uid="uid://2r7cxhu16ib4" path="res://furniture/food/salade.tscn" id="2_t010w"]
+[ext_resource type="Texture2D" uid="uid://qk2jxr2pr3fk" path="res://assets/BacASalade.png" id="3_t010w"]
+
+[node name="Spawner" type="Node2D"]
+script = ExtResource("1_gws0o")
+ingredient_scene = ExtResource("2_t010w")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(0, -49)
+texture = ExtResource("3_t010w")
+
+[node name="SpawnPoint" type="Marker2D" parent="."]
+position = Vector2(-1, -53)

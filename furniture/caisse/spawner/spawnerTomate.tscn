@@ -1,0 +1,16 @@
+[gd_scene load_steps=4 format=3 uid="uid://53iu81ik4qn1"]
+
+[ext_resource type="Script" uid="uid://dqpqhxkh48b25" path="res://furniture/caisse/spawner/spawner.gd" id="1_kmqrf"]
+[ext_resource type="PackedScene" uid="uid://4p5riy2peyw1" path="res://furniture/food/tomate.tscn" id="2_j0kqe"]
+[ext_resource type="Texture2D" uid="uid://cfo6wtw50glsp" path="res://assets/BacATomate.png" id="3_j0kqe"]
+
+[node name="Spawner" type="Node2D"]
+script = ExtResource("1_kmqrf")
+ingredient_scene = ExtResource("2_j0kqe")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(-1, -50)
+texture = ExtResource("3_j0kqe")
+
+[node name="SpawnPoint" type="Marker2D" parent="."]
+position = Vector2(1, -47)

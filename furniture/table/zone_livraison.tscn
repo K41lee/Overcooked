@@ -1,0 +1,20 @@
+[gd_scene load_steps=4 format=3 uid="uid://jye8fo0v837p"]
+
+[ext_resource type="Script" uid="uid://cra18kmhjgj38" path="res://furniture/table/zone_livraison.gd" id="1_b6ima"]
+[ext_resource type="Texture2D" uid="uid://bpukyfe15brh1" path="res://assets/Service.png" id="2_qgqti"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_qgqti"]
+
+[node name="zone_livraison" type="Node2D"]
+scale = Vector2(0.2, 0.2)
+script = ExtResource("1_b6ima")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(0, 449.99997)
+texture = ExtResource("2_qgqti")
+
+[node name="PlacePoint" type="Marker2D" parent="."]
+position = Vector2(4.7683716e-07, 310)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_qgqti")

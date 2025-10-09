@@ -1,0 +1,17 @@
+[gd_scene load_steps=4 format=3 uid="uid://cystj1trhkybn"]
+
+[ext_resource type="Script" uid="uid://dqpqhxkh48b25" path="res://furniture/caisse/spawner/spawner.gd" id="1_04n4t"]
+[ext_resource type="PackedScene" uid="uid://pt3lesm6wq6k" path="res://furniture/food/poisson.tscn" id="2_04n4t"]
+[ext_resource type="Texture2D" uid="uid://y1y5koe2tvy3" path="res://assets/BacAPoisson.png" id="3_04n4t"]
+
+[node name="Spawner" type="Node2D"]
+script = ExtResource("1_04n4t")
+ingredient_scene = ExtResource("2_04n4t")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(-1, -50)
+scale = Vector2(0.1, 0.1)
+texture = ExtResource("3_04n4t")
+
+[node name="SpawnPoint" type="Marker2D" parent="."]
+position = Vector2(1, -47)

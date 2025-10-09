@@ -1,8 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://bi726se5gvxhb"]
-
-[ext_resource type="Texture2D" uid="uid://skoxuaot3hbr" path="res://Scene/Background/Sprite/Sol.png" id="1_maq8r"]
-
-[node name="TextureRect" type="TextureRect"]
-offset_right = 40.0
-offset_bottom = 40.0
-texture = ExtResource("1_maq8r")

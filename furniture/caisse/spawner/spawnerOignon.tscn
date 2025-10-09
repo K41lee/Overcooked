@@ -1,0 +1,16 @@
+[gd_scene load_steps=4 format=3 uid="uid://cc6oeck44ad62"]
+
+[ext_resource type="Script" uid="uid://dqpqhxkh48b25" path="res://furniture/caisse/spawner/spawner.gd" id="1_8s3pj"]
+[ext_resource type="PackedScene" uid="uid://df4727tw620oq" path="res://furniture/food/oignon.tscn" id="2_6q0tb"]
+[ext_resource type="Texture2D" uid="uid://djpkr1v6bkk55" path="res://assets/CaisseOignon.png" id="3_6q0tb"]
+
+[node name="Spawner" type="Node2D"]
+script = ExtResource("1_8s3pj")
+ingredient_scene = ExtResource("2_6q0tb")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(0, -58)
+texture = ExtResource("3_6q0tb")
+
+[node name="SpawnPoint" type="Marker2D" parent="."]
+position = Vector2(0, -59)

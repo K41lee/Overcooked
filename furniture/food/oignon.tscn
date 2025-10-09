@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3 uid="uid://df4727tw620oq"]
+
+[ext_resource type="Script" uid="uid://bai7wdqv764i" path="res://furniture/food/ingredient.gd" id="1_h4qvx"]
+[ext_resource type="Texture2D" uid="uid://dye4h56m71okm" path="res://assets/Oignon.png" id="2_o7dom"]
+
+[node name="oignon" type="Node2D"]
+script = ExtResource("1_h4qvx")
+type = "oignon"
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_o7dom")

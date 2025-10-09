@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3 uid="uid://vv2ascycwfie"]
+
+[ext_resource type="Script" uid="uid://cj2e30h3ghj5r" path="res://furniture/table/table_travail.gd" id="1_3eme2"]
+[ext_resource type="Texture2D" uid="uid://bab3pawq6agk4" path="res://assets/Table.png" id="2_bsnqa"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_nckmi"]
+
+[node name="table_travail" type="Node2D"]
+script = ExtResource("1_3eme2")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(-1, 89)
+texture = ExtResource("2_bsnqa")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_nckmi")
+
+[node name="PlacePoint" type="Marker2D" parent="."]
+position = Vector2(1, 52)

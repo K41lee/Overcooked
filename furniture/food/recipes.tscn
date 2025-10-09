@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://dnmnbs4kkj0bo"]
+
+[ext_resource type="Script" uid="uid://cds1th5qs31b4" path="res://furniture/food/recipes.gd" id="1_psqss"]
+
+[node name="recipes" type="Node"]
+script = ExtResource("1_psqss")

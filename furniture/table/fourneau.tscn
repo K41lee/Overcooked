@@ -1,0 +1,21 @@
+[gd_scene load_steps=4 format=3 uid="uid://cilghcvxhvmbt"]
+
+[ext_resource type="Script" uid="uid://b6wyqmdligiqn" path="res://furniture/table/fourneau.gd" id="1_1s281"]
+[ext_resource type="Texture2D" uid="uid://cjbh1qkx5coee" path="res://assets/Fourneau.png" id="2_ec338"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ec338"]
+
+[node name="fourneau" type="Node2D"]
+script = ExtResource("1_1s281")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(95, -6)
+texture = ExtResource("2_ec338")
+
+[node name="PlacePoint" type="Marker2D" parent="."]
+position = Vector2(96, -69)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(-7.6293945e-06, -4.5474735e-13)
+scale = Vector2(0.99999994, 0.99999994)
+shape = SubResource("RectangleShape2D_ec338")
