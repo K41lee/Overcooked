@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://q5smwcdnqc33"
-path="res://.godot/imported/Tmp.png-3b29c7fe4fd760860bcb006cd50aba31.ctex"
+uid="uid://kufm30x4bir4"
+path="res://.godot/imported/Chaton_Move1.png-757a621e3d384083b270784ddda8d7bf.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Scene/Character/Sprite/Tmp.png"
-dest_files=["res://.godot/imported/Tmp.png-3b29c7fe4fd760860bcb006cd50aba31.ctex"]
+source_file="res://Scene/Character/Sprite/Chaton_Move1.png"
+dest_files=["res://.godot/imported/Chaton_Move1.png-757a621e3d384083b270784ddda8d7bf.ctex"]
 
 [params]
 

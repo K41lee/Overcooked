@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://banfoyysp8tl8"
-path="res://.godot/imported/New Piskel.png-f4bba47451a11ecd0e90d12af125efa8.ctex"
+uid="uid://yqm53qb70euy"
+path="res://.godot/imported/Chaton_cook.png-eb12dbc8f452faa66cd44e6c9c22f88a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Scene/Character/Sprite/New Piskel.png"
-dest_files=["res://.godot/imported/New Piskel.png-f4bba47451a11ecd0e90d12af125efa8.ctex"]
+source_file="res://Scene/Character/Sprite/Chaton_cook.png"
+dest_files=["res://.godot/imported/Chaton_cook.png-eb12dbc8f452faa66cd44e6c9c22f88a.ctex"]
 
 [params]
 

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://banfoyysp8tl8"
-path="res://.godot/imported/New Piskel.png-f4bba47451a11ecd0e90d12af125efa8.ctex"
+uid="uid://byym3mm72l237"
+path="res://.godot/imported/chaton_idle.png-cbe812d4d0470b8509a41fedeafb0e34.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Scene/Character/Sprite/New Piskel.png"
-dest_files=["res://.godot/imported/New Piskel.png-f4bba47451a11ecd0e90d12af125efa8.ctex"]
+source_file="res://Scene/Character/Sprite/chaton_idle.png"
+dest_files=["res://.godot/imported/chaton_idle.png-cbe812d4d0470b8509a41fedeafb0e34.ctex"]
 
 [params]
 
