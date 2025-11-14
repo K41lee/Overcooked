@@ -2,6 +2,8 @@ extends CharacterBody2D
 
 @export var speed: float = 200.0
 
+@export var agent_id: int = 0
+
 var held_ingredient: Node2D = null
 @onready var hand_point: Marker2D = $HandPoint
 @onready var action_label: Label = $ActionLabel
@@ -58,6 +60,15 @@ func pickup(target_name: String) -> void:
 				print("🚶 Agent: go to the plate stack")
 				_update_label("Va chercher une assiette")
 
+		# Try to reserve the target if it supports reservations
+		if node.has_method("reserve"):
+			if not node.reserve(agent_id):
+				print("⚠️ Can't reserve ", node.name, " — retry later")
+				# simple backoff + requeue
+				await get_tree().create_timer(0.5).timeout
+				queue_actions([["pickup", target_name]])
+				return
+		
 		print("🎯 Agent: pickup " + target_name)
 		_start_action(node, "pickup")
 	else:
@@ -67,6 +78,14 @@ func pickup(target_name: String) -> void:
 func drop(station: String) -> void:
 	var node = _find_node(station)
 	if node:
+		# Try to reserve the station if it supports reservations
+		if node.has_method("reserve"):
+			if not node.reserve(agent_id):
+				print("⚠️ Can't reserve ", node.name, " — retry later")
+				await get_tree().create_timer(0.5).timeout
+				queue_actions([["drop", station]])
+				return
+		
 		print("🎯 Agent: drop on " + station)
 		_start_action(node, "drop")
 
@@ -74,6 +93,14 @@ func drop(station: String) -> void:
 func deliver() -> void:
 	var node = _find_node("ZoneLivraison")
 	if node:
+		# reserve delivery zone if possible
+		if node.has_method("reserve"):
+			if not node.reserve(agent_id):
+				print("⚠️ Can't reserve delivery zone — retry later")
+				await get_tree().create_timer(0.5).timeout
+				queue_actions([["deliver"]])
+				return
+		
 		print("🎯 Agent: deliver plate")
 		_start_action(node, "deliver")
 
@@ -179,11 +206,19 @@ func _start_action(node: Node2D, act: String) -> void:
 func _perform_action() -> void:
 	# ----- PICKUP -----
 	if action == "pickup" and held_ingredient == null and target and target.has_method("give_ingredient"):
-		held_ingredient = target.give_ingredient()
+		# Request the ingredient, passing our agent_id when supported
+		if target.has_method("give_ingredient"):
+			held_ingredient = target.give_ingredient(agent_id)
+		else:
+			held_ingredient = target.give_ingredient()
 		if held_ingredient:
 			held_ingredient.get_parent().remove_child(held_ingredient)
 			hand_point.add_child(held_ingredient)
 			held_ingredient.position = Vector2.ZERO
+
+			# release reservation on the source (spawner/pile) if supported
+			if target and target.has_method("release"):
+				target.release(agent_id)
 
 			var label = "objet"
 			if "type" in held_ingredient:
@@ -204,7 +239,14 @@ func _perform_action() -> void:
 			obj = held_ingredient.type
 
 		if target and target.has_method("receive_ingredient"):
-			if target.receive_ingredient(held_ingredient):
+			# pass agent_id when possible
+			var received = false
+			if target.has_method("receive_ingredient"):
+				received = target.receive_ingredient(held_ingredient, agent_id)
+			else:
+				received = target.receive_ingredient(held_ingredient)
+			
+			if received:
 				print("👉 Agent: a déposé " + obj)
 				hand_point.remove_child(held_ingredient)
 				held_ingredient = null
@@ -216,7 +258,7 @@ func _perform_action() -> void:
 					await get_tree().create_timer(cut_time).timeout
 
 					if station and station.has_method("give_ingredient"):
-						var ing = station.give_ingredient()
+						var ing = station.give_ingredient(agent_id)
 						if ing:
 							if ing.get_parent():
 								ing.get_parent().remove_child(ing)
@@ -226,6 +268,10 @@ func _perform_action() -> void:
 							_update_label("Tient " + obj)
 							await get_tree().create_timer(action_delay).timeout
 
+					# release the station reservation after retrieving (or even if nothing was returned)
+					if station and station.has_method("release"):
+						station.release(agent_id)
+
 				# ----- Cas : Fourneau -----
 				elif target.name.begins_with("Fourneau"):
 					var station = target
@@ -233,7 +279,7 @@ func _perform_action() -> void:
 					await get_tree().create_timer(cook_time).timeout
 
 					if station and station.has_method("give_ingredient"):
-						var ing2 = station.give_ingredient()
+						var ing2 = station.give_ingredient(agent_id)
 						if ing2:
 							if ing2.get_parent():
 								ing2.get_parent().remove_child(ing2)
@@ -243,12 +289,21 @@ func _perform_action() -> void:
 							_update_label("Tient " + obj)
 							await get_tree().create_timer(action_delay).timeout
 
+					# release the station reservation after retrieving (or even if nothing was returned)
+					if station and station.has_method("release"):
+						station.release(agent_id)
+
 				# ----- Cas : simple table -----
 				else:
 					_update_label("Pose " + obj)
 					await get_tree().create_timer(action_delay).timeout
 					_update_label("Déposé " + obj)
 					await get_tree().create_timer(action_delay).timeout
+					# release reservation on simple tables if supported
+					# For TableTravail we keep the reservation across multiple ingredient drops
+					# so the agent can assemble the plate. Only release for other tables.
+					if target and target.has_method("release") and not target.name.begins_with("TableTravail"):
+						target.release(agent_id)
 
 
 	# ----- DELIVER -----
@@ -257,7 +312,14 @@ func _perform_action() -> void:
 		if "type" in held_ingredient:
 			obj = held_ingredient.type
 
-		if target.receive_ingredient(held_ingredient):
+		# pass agent_id when possible
+		var received = false
+		if target.has_method("receive_ingredient"):
+			received = target.receive_ingredient(held_ingredient, agent_id)
+		else:
+			received = target.receive_ingredient(held_ingredient)
+		
+		if received:
 			print("🚚 Agent: a livré " + obj)
 			hand_point.remove_child(held_ingredient)
 
@@ -267,6 +329,9 @@ func _perform_action() -> void:
 			await get_tree().create_timer(action_delay).timeout
 
 			held_ingredient = null
+			# release delivery zone reservation if any
+			if target and target.has_method("release"):
+				target.release(agent_id)
 
 
 # ---------------------------

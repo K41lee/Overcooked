@@ -3,9 +3,36 @@ extends Node2D
 var stored: Node2D = null
 @onready var place_point: Marker2D = $PlacePoint
 
-func receive_ingredient(ingredient: Node2D) -> bool:
+# Reservation API (Phase A)
+var reserved_by: int = -1
+signal reservation_changed(reserved_by)
+
+func reserve(agent_id: int) -> bool:
+	if reserved_by == -1:
+		reserved_by = agent_id
+		emit_signal("reservation_changed", reserved_by)
+		print("[Reservation] ", get_path(), " reserved by agent", reserved_by)
+		return true
+	if reserved_by == agent_id:
+		return true
+	return false
+
+func release(agent_id: int) -> void:
+	if reserved_by == agent_id:
+		reserved_by = -1
+		emit_signal("reservation_changed", reserved_by)
+		print("[Reservation] ", get_path(), " released by agent", agent_id)
+func is_reserved() -> bool:
+	return reserved_by != -1
+
+func receive_ingredient(ingredient: Node2D, agent_id: int = -1) -> bool:
 	# Si une assiette est déjà posée sur la table
+	# Reservation check
+	if reserved_by != -1 and agent_id != reserved_by:
+		return false
+
 	if stored != null and stored.has_method("add_ingredient"):
+		# forward agent_id? add_ingredient doesn't accept agent_id yet
 		return stored.add_ingredient(ingredient)
 
 	# Sinon on pose l'objet normalement (assiette ou ingrédient seul)
@@ -19,7 +46,9 @@ func receive_ingredient(ingredient: Node2D) -> bool:
 	return false
 
 
-func give_ingredient() -> Node2D:
+func give_ingredient(agent_id: int = -1) -> Node2D:
+	if reserved_by != -1 and agent_id != reserved_by:
+		return null
 	if stored != null:
 		var ing = stored
 		stored = null
