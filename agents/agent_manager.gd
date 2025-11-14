@@ -55,12 +55,51 @@ func get_nearest_free_and_reserve(group_name: String, position: Vector2, agent_i
 	if tree == null:
 		push_warning("AgentManager.get_nearest_free_and_reserve: SceneTree is null")
 		return null
-	var nodes = tree.get_nodes_in_group(group_name)
-	print("AgentManager: get_nearest_free_and_reserve called for group='", group_name, "', agent=", agent_id)
-	if nodes != null:
-		print("AgentManager: found ", nodes.size(), " nodes in group '", group_name, "'")
+	# Build a list of candidate group names to search.
+	# Try exact name, then strip trailing digits (TableTravail1 -> TableTravail),
+	# and also allow a generic 'Spawner' group when appropriate.
+	var group_candidates := []
+	group_candidates.append(group_name)
+	# strip trailing digits
+	var base = group_name
+	# strip trailing digits (no is_digit in this GDScript version)
+	while base.length() > 0:
+		var last_char = base.substr(base.length() - 1, 1)
+		if last_char >= "0" and last_char <= "9":
+			base = base.substr(0, base.length() - 1)
+		else:
+			break
+	if base != group_name and base != "":
+		group_candidates.append(base)
+	# If it's a specific spawner like SpawnerTomate, also add 'Spawner' as fallback
+	if group_name.begins_with("Spawner") and not group_candidates.has("Spawner"):
+		group_candidates.append("Spawner")
+
+	# Category aliases: map logical groups to category groups used for recipes
+	if group_name == "TableCoupe" and not group_candidates.has("ChopStations"):
+		group_candidates.append("ChopStations")
+	if group_name == "Fourneau" and not group_candidates.has("CookStations"):
+		group_candidates.append("CookStations")
+
+	print("AgentManager: get_nearest_free_and_reserve called for group='", group_name, "' (candidates=", group_candidates, "), agent=", agent_id)
+
+	# Prefer nodes from the most specific candidate group available.
+	# This ensures that requesting 'SpawnerViande' won't return a different spawner
+	# found under the generic 'Spawner' group if specific ones exist.
+	var nodes := []
+	var chosen_group: String = ""
+	for g in group_candidates:
+		var gnodes = tree.get_nodes_in_group(g)
+		if gnodes != null and gnodes.size() > 0:
+			print("AgentManager: found ", gnodes.size(), " nodes in group '", g, "'")
+			# use this group's nodes only
+			for n in gnodes:
+				nodes.append(n)
+			chosen_group = g
+			break
+
 	if nodes == null or nodes.size() == 0:
-		# no group members found — try to resolve a single node by name in the current scene
+	# no group members found — try to resolve a single node by name in the current scene
 		var scene = tree.current_scene
 		if scene:
 			# first try exact path
@@ -228,6 +267,13 @@ func _add_groups(node: Node) -> void:
 		# Add the node to a group named after its node name if not already in it
 		if not child.is_in_group(child.name):
 			child.add_to_group(child.name)
+		# Also add pattern-based groups for common prefixes so e.g. "TableTravail1" -> group "TableTravail"
+		var name = child.name
+		var patterns = ["TableTravail", "TableCoupe", "Spawner", "Fourneau", "ZoneLivraison", "PileAssiettes", "Table"]
+		for p in patterns:
+			if name.begins_with(p) and not child.is_in_group(p):
+				child.add_to_group(p)
+
 		# Recurse
 		_add_groups(child)
 
