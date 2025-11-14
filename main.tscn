@@ -12,6 +12,7 @@
 [ext_resource type="PackedScene" uid="uid://b6j0tuvbd6vii" path="res://furniture/caisse/pile_assiettes.tscn" id="8_w48qg"]
 [ext_resource type="PackedScene" uid="uid://jye8fo0v837p" path="res://furniture/table/zone_livraison.tscn" id="9_vivmo"]
 [ext_resource type="PackedScene" uid="uid://vv2ascycwfie" path="res://furniture/table/table_travail.tscn" id="10_4c57u"]
+[ext_resource type="Script" uid="uid://agent_manager_script" path="res://agents/agent_manager.gd" id="11_agentmgr"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_ig7tw")
@@ -45,6 +46,10 @@ position = Vector2(152, 455)
 
 [node name="ZoneLivraison" parent="." instance=ExtResource("9_vivmo")]
 position = Vector2(370, 493.00006)
+
+[node name="AgentManager" type="Node" parent="."]
+script = ExtResource("11_agentmgr")
+position = Vector2(0, 0)
 
 [node name="TableTravail1" parent="." instance=ExtResource("10_4c57u")]
 position = Vector2(579, 494)
