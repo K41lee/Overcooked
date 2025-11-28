@@ -39,8 +39,8 @@ func receive_ingredient(ingredient: Node2D, agent_id: int = -1) -> bool:
 		ingredient.position = place_point.position
 
 		# ✅ transformation en "chopped"
-		if "state" in ingredient:
-			ingredient.state = "chopped"
+		if ingredient.has_method("chop"):
+			ingredient.chop()
 			print("🔪 " + ingredient.type + " a été coupé")
 
 		return true

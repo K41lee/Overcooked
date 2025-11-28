@@ -39,8 +39,8 @@ func receive_ingredient(ingredient: Node2D, agent_id: int = -1) -> bool:
 		ingredient.position = place_point.position
 
 		# ✅ transformation en "cooked"
-		if "state" in ingredient:
-			ingredient.state = "cooked"
+		if ingredient.has_method("cook"):
+			ingredient.cook()
 			print("🔥 " + ingredient.type + " a été cuit")
 
 		return true
