@@ -1,7 +1,7 @@
 extends CharacterBody2D
 
 @export var speed: float = 200.0
-
+@onready var anim = $AnimatedSprite2D
 @export var agent_id: int = 0
 
 # Retry/backoff configuration (Phase C.1)
@@ -36,6 +36,7 @@ var action_queue: Array = []
 var is_busy: bool = false
 var current_action_entry = null
 var current_recipe: Dictionary = {}  # Recette en cours de préparation
+var is_animation_locked: bool = false
 @export var action_delay: float = 1.0
 @export var cut_time: float = 6.0
 @export var cook_time: float = 10.0
@@ -54,6 +55,7 @@ func _physics_process(delta: float) -> void:
 			# Limiter la vitesse pour ne pas dépasser speed
 			if velocity.length() > speed:
 				velocity = velocity.normalized() * speed
+			
 		else:
 			# Reached target — perform action (async)
 			velocity = Vector2.ZERO
@@ -62,7 +64,7 @@ func _physics_process(delta: float) -> void:
 			return
 	else:
 		velocity = Vector2.ZERO
-
+	update_anim()
 	move_and_slide()
 
 func _ready() -> void:
@@ -343,12 +345,13 @@ func _start_action(node: Node2D, act: String) -> void:
 	target = node
 	action = act
 	is_busy = true
+	is_animation_locked = false  # Déverrouiller l'animation quand on commence une nouvelle action
 
 	# Start an action timeout monitor for this action (runs detached)
 	if current_action_entry != null:
 		call_deferred("_start_action_timeout_monitor", current_action_entry)
 
-	# Déterminer ce qu’on tient
+	# Déterminer ce qu'on tient
 	var obj = ""
 	if held_ingredient != null and "type" in held_ingredient:
 		obj = held_ingredient.type
@@ -406,6 +409,7 @@ func _perform_action() -> void:
 			print("👉 Agent: a ramassé " + label)
 
 			_update_label("Prend " + label)
+			update_anim("idle")
 			await get_tree().create_timer(action_delay).timeout
 			_update_label("Tient " + label)
 			await get_tree().create_timer(action_delay).timeout
@@ -434,7 +438,10 @@ func _perform_action() -> void:
 				if target.name.begins_with("TableCoupe"):
 					var station = target
 					_update_label("Coupe " + obj)
+					is_animation_locked = true
+					update_anim("cook")
 					await get_tree().create_timer(cut_time).timeout
+					is_animation_locked = false
 
 					if station and station.has_method("give_ingredient"):
 						var ing = station.give_ingredient(agent_id)
@@ -458,7 +465,10 @@ func _perform_action() -> void:
 				elif target.name.begins_with("Fourneau"):
 					var station = target
 					_update_label("Cuit " + obj)
+					is_animation_locked = true
+					update_anim("cook")
 					await get_tree().create_timer(cook_time).timeout
+					is_animation_locked = false
 
 					if station and station.has_method("give_ingredient"):
 						var ing2 = station.give_ingredient(agent_id)
@@ -481,6 +491,7 @@ func _perform_action() -> void:
 				# ----- Cas : simple table -----
 				else:
 					_update_label("Pose " + obj)
+					update_anim("idle")
 					await get_tree().create_timer(action_delay).timeout
 					_update_label("Déposé " + obj)
 					await get_tree().create_timer(action_delay).timeout
@@ -513,6 +524,7 @@ func _perform_action() -> void:
 			hand_point.remove_child(held_ingredient)
 
 			_update_label("Livre " + obj)
+			update_anim("idle")
 			await get_tree().create_timer(action_delay).timeout
 			_update_label("Servi " + obj)
 			await get_tree().create_timer(action_delay).timeout
@@ -747,3 +759,20 @@ func _find_node(name: String) -> Node2D:
 
 func _update_label(text: String) -> void:
 	action_label.text = text
+	
+func update_anim(force_anim: String = "") -> void:
+	# Si une animation est forcée, on la joue directement
+	if force_anim != "":
+		anim.play(force_anim)
+		return
+	
+	# Si l'animation est verrouillée, ne pas la changer
+	if is_animation_locked:
+		return
+	
+	# Sinon, logique basée sur le mouvement
+	if velocity != Vector2.ZERO:
+		anim.play("walk")
+	else:
+		anim.play("idle")
+		
