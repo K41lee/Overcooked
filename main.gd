@@ -9,7 +9,8 @@ extends Node2D
 var score: int = 0
 var agents: Array = []  # Liste de tous les agents actifs
 var work_tables: Array = ["TableTravail1", "TableTravail2", "TableTravail3"]
-var recipe_queue: Array = []  # File d'attente de recettes à préparer
+var active_recipes: Array = []  # 3 recettes actives en permanence
+var max_active_recipes: int = 3
 
 func _ready():
 	# Supprimer le cuisinier existant dans la scène (sera recréé programmatiquement)
@@ -23,10 +24,10 @@ func _ready():
 	# Instancier 3 agents avec agent_id uniques
 	_spawn_agents(3)
 	
-	# Remplir la queue avec plusieurs recettes
-	_initialize_recipe_queue(6)
+	# Générer les 3 premières recettes actives
+	_fill_active_recipes()
 	
-	# Distribuer les premières recettes aux agents
+	# Distribuer les recettes aux agents
 	_distribute_recipes()
 
 
@@ -58,22 +59,23 @@ func _spawn_agents(count: int):
 		print("🍳 Agent%d instancié à %v" % [i, agent.position])
 
 
-func _initialize_recipe_queue(count: int):
-	"""Génère une queue de recettes aléatoires"""
-	for i in range(count):
+func _fill_active_recipes():
+	"""Maintient toujours 3 recettes actives"""
+	while active_recipes.size() < max_active_recipes:
 		recipes.set_random_recipe()
-		var rec = recipes.get_current_recipe()
-		recipe_queue.append(rec)
-		print("📝 Recette ajoutée à la queue: %s" % rec["name"])
+		var rec = recipes.get_current_recipe().duplicate()
+		active_recipes.append(rec)
+		print("📝 Nouvelle recette active: %s" % rec["name"])
+	_update_ui()
 
 
 func _distribute_recipes():
-	"""Assigne une recette à chaque agent disponible"""
-	for i in range(min(agents.size(), recipe_queue.size())):
-		if recipe_queue.is_empty():
+	"""Assigne une recette active à chaque agent disponible"""
+	for i in range(min(agents.size(), active_recipes.size())):
+		if active_recipes.is_empty():
 			break
 		var agent = agents[i]
-		var rec = recipe_queue.pop_front()
+		var rec = active_recipes[i]  # Chaque agent prend une recette différente
 		var table = work_tables[i % work_tables.size()]  # Distribution round-robin des tables
 		
 		print("🎯 Assignment: Agent%d → %s sur %s" % [agent.agent_id, rec["name"], table])
@@ -85,23 +87,30 @@ func _distribute_recipes():
 func _on_agent_recipe_completed(agent):
 	"""Callback quand un agent termine sa recette"""
 	print("✅ Agent%d a terminé sa recette!" % agent.agent_id)
-	add_score(10)
 	
-	# Assigner la prochaine recette disponible
-	if not recipe_queue.is_empty():
-		var rec = recipe_queue.pop_front()
-		var table = work_tables[agent.agent_id % work_tables.size()]
-		print("🎯 New Assignment: Agent%d → %s sur %s" % [agent.agent_id, rec["name"], table])
-		agent.make_recipe(rec, table)
-	else:
-		print("🏁 Agent%d idle (queue vide)" % agent.agent_id)
+	# Trouver quelle recette cet agent était en train de faire
+	var agent_index = agents.find(agent)
+	if agent_index != -1 and agent_index < active_recipes.size():
+		# Générer une nouvelle recette pour remplacer celle terminée
+		recipes.set_random_recipe()
+		var new_rec = recipes.get_current_recipe().duplicate()
+		active_recipes[agent_index] = new_rec
+		print("📝 Nouvelle recette générée: %s" % new_rec["name"])
+		
+		# Assigner la nouvelle recette à l'agent
+		var table = work_tables[agent_index % work_tables.size()]
+		print("🎯 New Assignment: Agent%d → %s sur %s" % [agent.agent_id, new_rec["name"], table])
+		agent.make_recipe(new_rec, table)
 	
 	_update_ui()
 
 
 func _update_ui():
-	"""Met à jour l'affichage avec le nombre de recettes restantes"""
-	recipe_label.text = "Recettes restantes: %d" % recipe_queue.size()
+	"""Met à jour l'affichage avec les recettes actives"""
+	var recipe_names = []
+	for rec in active_recipes:
+		recipe_names.append(rec["name"])
+	recipe_label.text = "Recettes actives: " + ", ".join(recipe_names)
 
 
 func add_score(points: int):

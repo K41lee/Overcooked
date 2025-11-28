@@ -44,10 +44,11 @@ func receive_ingredient(ingredient: Node2D, agent_id: int = -1) -> bool:
 			# Vérifier que le contenu correspond à la recette
 			if _check_recipe_match(content, expected, ingredient):
 				print("✅ Recette validée :", expected.get("name", "inconnue"))
-				main_node.add_score(100)
+				main_node.add_score(100)  # +100 points pour succès
 				ingredient.queue_free()
 			else:
 				print("❌ Mauvaise recette... Attendu:", expected.get("name", "?"))
+				main_node.add_score(-50)  # -50 points pour échec
 				ingredient.queue_free()
 		else:
 			print("❌ Assiette sans recette attendue")
