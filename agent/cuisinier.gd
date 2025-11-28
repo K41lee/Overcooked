@@ -7,6 +7,7 @@ extends CharacterBody2D
 var held_ingredient: Node2D = null
 @onready var hand_point: Marker2D = $HandPoint
 @onready var action_label: Label = $ActionLabel
+@onready var agent_manager = null
 
 var target: Node2D = null
 var action: String = ""
@@ -40,6 +41,25 @@ func _physics_process(delta: float) -> void:
 	update_anim()
 	move_and_slide()
 
+func _ready() -> void:
+	# Find an AgentManager in the current scene if present. Do NOT preload/create one here.
+	agent_manager = null
+	var scene = null
+	if get_tree() != null:
+		scene = get_tree().current_scene
+	if scene:
+		agent_manager = scene.get_node_or_null("AgentManager")
+	if agent_manager == null:
+		print("Agent: no AgentManager found in scene; operating without central manager (no preload)")
+
+	# Register ourselves if manager supports it
+	if agent_manager and agent_manager.has_method("register_agent"):
+		agent_manager.register_agent(self)
+
+func _exit_tree() -> void:
+	if agent_manager and agent_manager.has_method("unregister_agent"):
+		agent_manager.unregister_agent(self)
+
 
 # ---------------------------
 # ACTIONS DE BASE
@@ -47,10 +67,24 @@ func _physics_process(delta: float) -> void:
 
 func pickup(target_name: String) -> void:
 	var node: Node2D = null
-	if target_name in ["tomate", "salade", "oignon", "viande", "poisson"]:
-		node = _find_node("Spawner" + target_name.capitalize())
+	# Prefer AgentManager selection + reservation if available
+	if agent_manager and agent_manager.has_method("get_nearest_free_and_reserve"):
+		if target_name in ["tomate", "salade", "oignon", "viande", "poisson"]:
+			var group_name = "Spawner" + target_name.capitalize()
+			node = agent_manager.get_nearest_free_and_reserve(group_name, global_position, agent_id)
+			# fallback to direct lookup if manager couldn't resolve the spawner
+			if node == null:
+				node = _find_node("Spawner" + target_name.capitalize())
+		else:
+			# try using the name as a group, fallback to raw node lookup
+			node = agent_manager.get_nearest_free_and_reserve(target_name, global_position, agent_id)
+			if node == null:
+				node = _find_node(target_name)
 	else:
-		node = _find_node(target_name)
+		if target_name in ["tomate", "salade", "oignon", "viande", "poisson"]:
+			node = _find_node("Spawner" + target_name.capitalize())
+		else:
+			node = _find_node(target_name)
 
 	if node:
 		# ✅ Messages spécifiques + update label
@@ -62,14 +96,15 @@ func pickup(target_name: String) -> void:
 				print("🚶 Agent: go to the plate stack")
 				_update_label("Va chercher une assiette")
 
-		# Try to reserve the target if it supports reservations
-		if node.has_method("reserve"):
-			if not node.reserve(agent_id):
-				print("⚠️ Can't reserve ", node.name, " — retry later")
-				# simple backoff + requeue
-				await get_tree().create_timer(0.5).timeout
-				queue_actions([["pickup", target_name]])
-				return
+		# If AgentManager was used, it's already reserved. Otherwise try to reserve directly.
+		if not (agent_manager and agent_manager.has_method("get_nearest_free_and_reserve")):
+			if node.has_method("reserve"):
+				if not node.reserve(agent_id):
+					print("⚠️ Can't reserve ", node.name, " — retry later")
+					# simple backoff + requeue
+					await get_tree().create_timer(0.5).timeout
+					queue_actions([["pickup", target_name]])
+					return
 		
 		print("🎯 Agent: pickup " + target_name)
 		_start_action(node, "pickup")
@@ -78,31 +113,119 @@ func pickup(target_name: String) -> void:
 
 
 func drop(station: String) -> void:
-	var node = _find_node(station)
-	if node:
-		# Try to reserve the station if it supports reservations
-		if node.has_method("reserve"):
-			if not node.reserve(agent_id):
-				print("⚠️ Can't reserve ", node.name, " — retry later")
+	var node = null
+	# Use AgentManager to find and reserve station if available
+	if agent_manager and agent_manager.has_method("get_nearest_free_and_reserve"):
+		node = agent_manager.get_nearest_free_and_reserve(station, global_position, agent_id)
+		if node == null:
+			# Try fallback: direct node lookup + direct reserve
+			var direct = _find_node(station)
+			if direct:
+				if direct.has_method("reserve"):
+					if direct.reserve(agent_id):
+						node = direct
+					else:
+						print("AgentManager fallback: direct node found but reserve failed for ", direct.name)
+						if agent_manager and agent_manager.has_method("debug_log_reservations"):
+							agent_manager.debug_log_reservations(station)
+						await get_tree().create_timer(0.5).timeout
+						queue_actions([["drop", station]])
+						return
+				else:
+					# node exists and has no reservation API — accept it
+					node = direct
+			else:
+				print("AgentManager: no node found via manager for '", station, "' and no direct node available — retry")
+				if agent_manager and agent_manager.has_method("debug_log_reservations"):
+					agent_manager.debug_log_reservations(station)
 				await get_tree().create_timer(0.5).timeout
 				queue_actions([["drop", station]])
 				return
-		
+	else:
+		node = _find_node(station)
+		if node:
+			if node.has_method("reserve"):
+				if not node.reserve(agent_id):
+					print("⚠️ Can't reserve ", node.name, " — retry later")
+					await get_tree().create_timer(0.5).timeout
+					queue_actions([["drop", station]])
+					return
+
+	if node:
 		print("🎯 Agent: drop on " + station)
 		_start_action(node, "drop")
 
 
 func deliver() -> void:
-	var node = _find_node("ZoneLivraison")
-	if node:
-		# reserve delivery zone if possible
-		if node.has_method("reserve"):
-			if not node.reserve(agent_id):
-				print("⚠️ Can't reserve delivery zone — retry later")
+	var node = null
+	# Prefer manager-based reservation (gives diagnostics)
+	if agent_manager and agent_manager.has_method("get_nearest_free_and_reserve"):
+		print("Agent: requesting AgentManager to reserve ZoneLivraison for agent", agent_id)
+		node = agent_manager.get_nearest_free_and_reserve("ZoneLivraison", global_position, agent_id)
+		if node == null:
+			# Ask manager to print reservation table for diagnosis if available
+			if agent_manager and agent_manager.has_method("debug_log_reservations"):
+				agent_manager.debug_log_reservations("ZoneLivraison")
+			# Try a direct fallback: find the node and attempt direct reserve (helps when groups are not set)
+			var direct = _find_node("ZoneLivraison")
+			if direct:
+				print("Agent: AgentManager returned null — trying direct reserve on:", direct.name)
+				if direct.has_method("reserve"):
+					if direct.reserve(agent_id):
+						node = direct
+					else:
+						# inspect holder and attempt to clear stale reservation if holder unknown to manager
+						var holder = null
+						if "reserved_by" in direct:
+							holder = direct.reserved_by
+							print("Agent: direct reserve failed — holder=", str(holder))
+							if agent_manager and agent_manager.has_method("find_agent_by_id"):
+								var hnode = agent_manager.find_agent_by_id(holder)
+								if hnode == null and holder != null:
+									print("Agent: holder ", str(holder), " not registered — releasing stale reservation and retrying")
+									if direct.has_method('release'):
+										direct.release(holder)
+										if direct.reserve(agent_id):
+											node = direct
+									
+						# if still not reserved, fallthrough to retry
+				else:
+					# direct node exists but has no reserve API — accept it
+					node = direct
+				if node == null:
+					print("⚠️ Can't reserve delivery zone via AgentManager or direct fallback — retry later")
+					await get_tree().create_timer(0.5).timeout
+					queue_actions([["deliver"]])
+					return
+			else:
+				print("⚠️ Can't reserve delivery zone via AgentManager and node not found in scene — retry later")
 				await get_tree().create_timer(0.5).timeout
 				queue_actions([["deliver"]])
 				return
-		
+	else:
+		# Manager unavailable; try direct lookup and provide rich logging
+		node = _find_node("ZoneLivraison")
+		if node == null:
+			print("⚠️ Delivery zone node not found in scene (ZoneLivraison)")
+			await get_tree().create_timer(0.5).timeout
+			queue_actions([["deliver"]])
+			return
+		# if node exists, inspect reservation API
+		print("Agent: direct delivery node found:", node, "has reserve:", node.has_method("reserve"))
+		if node.has_method("reserve"):
+			# try to reserve and, if it fails, print who holds it
+			if not node.reserve(agent_id):
+				var holder = "unknown"
+				if "reserved_by" in node:
+					holder = str(node.reserved_by)
+				print("⚠️ Can't reserve delivery zone — currently held by:", holder)
+				if agent_manager and agent_manager.has_method("debug_log_reservations"):
+					agent_manager.debug_log_reservations("ZoneLivraison")
+				await get_tree().create_timer(0.5).timeout
+				queue_actions([["deliver"]])
+				return
+
+	if node:
 		print("🎯 Agent: deliver plate")
 		_start_action(node, "deliver")
 
