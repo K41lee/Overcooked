@@ -1,0 +1,113 @@
+[gd_scene load_steps=15 format=3 uid="uid://cydcrkxeuy1gy"]
+
+[ext_resource type="Script" path="res://benchmark_2_agents.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://cujusi16bq87" path="res://agent/cuisinier.tscn" id="2_272bh"]
+[ext_resource type="PackedScene" uid="uid://cc6oeck44ad62" path="res://furniture/caisse/spawner/spawnerOignon.tscn" id="3_kek77"]
+[ext_resource type="PackedScene" uid="uid://6426a6dbyrdl" path="res://furniture/caisse/spawner/spawnerSalade.tscn" id="4_4c57u"]
+[ext_resource type="PackedScene" uid="uid://bej66c6hnlu17" path="res://furniture/caisse/spawner/spawnerViande.tscn" id="5_dg77c"]
+[ext_resource type="PackedScene" uid="uid://53iu81ik4qn1" path="res://furniture/caisse/spawner/spawnerTomate.tscn" id="5_efxa6"]
+[ext_resource type="PackedScene" uid="uid://cpea0s80fc7ou" path="res://furniture/table/table_coupe.tscn" id="6_dg77c"]
+[ext_resource type="PackedScene" uid="uid://cystj1trhkybn" path="res://furniture/caisse/spawner/spawnerPoisson.tscn" id="6_ycdy4"]
+[ext_resource type="PackedScene" uid="uid://cilghcvxhvmbt" path="res://furniture/table/fourneau.tscn" id="7_ycdy4"]
+[ext_resource type="PackedScene" uid="uid://b6j0tuvbd6vii" path="res://furniture/caisse/pile_assiettes.tscn" id="8_w48qg"]
+[ext_resource type="PackedScene" uid="uid://jye8fo0v837p" path="res://furniture/table/zone_livraison.tscn" id="9_vivmo"]
+[ext_resource type="PackedScene" uid="uid://vv2ascycwfie" path="res://furniture/table/table_travail.tscn" id="10_4c57u"]
+[ext_resource type="Script" uid="uid://bshqku45opjby" path="res://agents/agent_manager.gd" id="11_agentmgr"]
+[ext_resource type="Script" uid="uid://d0lkx6e5hi5lp" path="res://agents/debug_overlay.gd" id="14_debug"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_script")
+
+[node name="DebugOverlay" type="CanvasLayer" parent="."]
+
+[node name="Control" type="Control" parent="DebugOverlay"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 1.0
+offset_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("14_debug")
+
+[node name="SpawnerOignon" parent="." instance=ExtResource("3_kek77")]
+position = Vector2(71, 201)
+
+[node name="SpawnerSalade" parent="." instance=ExtResource("4_4c57u")]
+position = Vector2(66, 293)
+
+[node name="SpawnerTomate" parent="." instance=ExtResource("5_efxa6")]
+position = Vector2(75, 102)
+
+[node name="SpawnerViande" parent="." instance=ExtResource("5_dg77c")]
+position = Vector2(67, 468)
+
+[node name="SpawnerPoisson" parent="." instance=ExtResource("6_ycdy4")]
+position = Vector2(66, 382)
+
+[node name="TableCoupe" parent="." instance=ExtResource("6_dg77c")]
+position = Vector2(292, 49)
+
+[node name="TableCoupe2" parent="." instance=ExtResource("6_dg77c")]
+position = Vector2(491, 49)
+
+[node name="TableCoupe3" parent="." instance=ExtResource("6_dg77c")]
+position = Vector2(689, 50.000004)
+
+[node name="Fourneau" parent="." instance=ExtResource("7_ycdy4")]
+position = Vector2(944, 260)
+
+[node name="Fourneau2" parent="." instance=ExtResource("7_ycdy4")]
+position = Vector2(951.99994, 416)
+
+[node name="Fourneau3" parent="." instance=ExtResource("7_ycdy4")]
+position = Vector2(955, 567)
+
+[node name="Cuisinier" parent="." instance=ExtResource("2_272bh")]
+position = Vector2(186, 376)
+
+[node name="PileAssiettes" parent="." instance=ExtResource("8_w48qg")]
+position = Vector2(130, 508.00006)
+
+[node name="ZoneLivraison" parent="." instance=ExtResource("9_vivmo")]
+position = Vector2(1008.00006, 19)
+
+[node name="AgentManager" type="Node" parent="."]
+script = ExtResource("11_agentmgr")
+
+[node name="TableTravail1" parent="." instance=ExtResource("10_4c57u")]
+position = Vector2(377, 526.00006)
+
+[node name="TableTravail2" parent="." instance=ExtResource("10_4c57u")]
+position = Vector2(550, 526)
+
+[node name="TableTravail3" parent="." instance=ExtResource("10_4c57u")]
+position = Vector2(723, 527)
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="RecipeLabel" type="Label" parent="UI"]
+offset_left = 262.0
+offset_top = 20.0
+offset_right = 700.0
+offset_bottom = 43.0
+
+[node name="ScoreLabel" type="Label" parent="UI"]
+offset_left = 53.0
+offset_top = 17.0
+offset_right = 250.0
+offset_bottom = 40.0
+
+[node name="TimerLabel" type="Label" parent="UI"]
+offset_left = 850.0
+offset_top = 17.0
+offset_right = 1050.0
+offset_bottom = 40.0
+
+[node name="StatsLabel" type="Label" parent="UI"]
+offset_left = 262.0
+offset_top = 50.0
+offset_right = 800.0
+offset_bottom = 73.0
