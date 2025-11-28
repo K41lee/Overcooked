@@ -1,7 +1,7 @@
 extends CharacterBody2D
 
 @export var speed: float = 200.0
-
+@onready var anim = $AnimatedSprite2D
 @export var agent_id: int = 0
 
 var held_ingredient: Node2D = null
@@ -14,6 +14,7 @@ var interact_range: float = 16.0
 
 var action_queue: Array = []
 var is_busy: bool = false
+var is_animation_locked: bool = false
 @export var action_delay: float = 1.0
 @export var cut_time: float = 6.0
 @export var cook_time: float = 10.0
@@ -23,6 +24,7 @@ func _physics_process(delta: float) -> void:
 		var dir = (target.global_position - global_position)
 		if dir.length() > interact_range:
 			velocity = dir.normalized() * speed
+			
 		else:
 			velocity = Vector2.ZERO
 			_perform_action()
@@ -35,7 +37,7 @@ func _physics_process(delta: float) -> void:
 			_process_next_action()
 	else:
 		velocity = Vector2.ZERO
-
+	update_anim()
 	move_and_slide()
 
 
@@ -227,6 +229,7 @@ func _perform_action() -> void:
 			print("👉 Agent: a ramassé " + label)
 
 			_update_label("Prend " + label)
+			update_anim("idle")
 			await get_tree().create_timer(action_delay).timeout
 			_update_label("Tient " + label)
 			await get_tree().create_timer(action_delay).timeout
@@ -255,7 +258,10 @@ func _perform_action() -> void:
 				if target.name.begins_with("TableCoupe"):
 					var station = target
 					_update_label("Coupe " + obj)
+					is_animation_locked = true
+					update_anim("cook")
 					await get_tree().create_timer(cut_time).timeout
+					is_animation_locked = false
 
 					if station and station.has_method("give_ingredient"):
 						var ing = station.give_ingredient(agent_id)
@@ -266,6 +272,7 @@ func _perform_action() -> void:
 							ing.position = Vector2.ZERO
 							held_ingredient = ing
 							_update_label("Tient " + obj)
+							update_anim("idle")
 							await get_tree().create_timer(action_delay).timeout
 
 					# release the station reservation after retrieving (or even if nothing was returned)
@@ -276,7 +283,10 @@ func _perform_action() -> void:
 				elif target.name.begins_with("Fourneau"):
 					var station = target
 					_update_label("Cuit " + obj)
+					is_animation_locked = true
+					update_anim("cook")
 					await get_tree().create_timer(cook_time).timeout
+					is_animation_locked = false
 
 					if station and station.has_method("give_ingredient"):
 						var ing2 = station.give_ingredient(agent_id)
@@ -287,6 +297,7 @@ func _perform_action() -> void:
 							ing2.position = Vector2.ZERO
 							held_ingredient = ing2
 							_update_label("Tient " + obj)
+							update_anim("idle")
 							await get_tree().create_timer(action_delay).timeout
 
 					# release the station reservation after retrieving (or even if nothing was returned)
@@ -296,6 +307,7 @@ func _perform_action() -> void:
 				# ----- Cas : simple table -----
 				else:
 					_update_label("Pose " + obj)
+					update_anim("idle")
 					await get_tree().create_timer(action_delay).timeout
 					_update_label("Déposé " + obj)
 					await get_tree().create_timer(action_delay).timeout
@@ -324,6 +336,7 @@ func _perform_action() -> void:
 			hand_point.remove_child(held_ingredient)
 
 			_update_label("Livre " + obj)
+			update_anim("idle")
 			await get_tree().create_timer(action_delay).timeout
 			_update_label("Servi " + obj)
 			await get_tree().create_timer(action_delay).timeout
@@ -398,3 +411,20 @@ func _find_node(name: String) -> Node2D:
 
 func _update_label(text: String) -> void:
 	action_label.text = text
+	
+func update_anim(force_anim: String = "") -> void:
+	# Si une animation est forcée, on la joue directement
+	if force_anim != "":
+		anim.play(force_anim)
+		return
+	
+	# Si l'animation est verrouillée, ne pas la changer
+	if is_animation_locked:
+		return
+	
+	# Sinon, logique basée sur le mouvement
+	if velocity != Vector2.ZERO:
+		anim.play("walk")
+	else:
+		anim.play("idle")
+		
