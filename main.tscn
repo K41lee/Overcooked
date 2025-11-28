@@ -1,7 +1,8 @@
-[gd_scene load_steps=15 format=3 uid="uid://ecparibm5qrj"]
+[gd_scene load_steps=16 format=3 uid="uid://ecparibm5qrj"]
 
 [ext_resource type="Script" uid="uid://ctn70tlt5h0y6" path="res://main.gd" id="1_ig7tw"]
 [ext_resource type="PackedScene" uid="uid://cujusi16bq87" path="res://agent/cuisinier.tscn" id="2_272bh"]
+[ext_resource type="Texture2D" uid="uid://b14v3hrokffef" path="res://assets/Background.png" id="2_vivmo"]
 [ext_resource type="PackedScene" uid="uid://cc6oeck44ad62" path="res://furniture/caisse/spawner/spawnerOignon.tscn" id="3_kek77"]
 [ext_resource type="PackedScene" uid="uid://6426a6dbyrdl" path="res://furniture/caisse/spawner/spawnerSalade.tscn" id="4_4c57u"]
 [ext_resource type="PackedScene" uid="uid://bej66c6hnlu17" path="res://furniture/caisse/spawner/spawnerViande.tscn" id="5_dg77c"]
@@ -17,6 +18,11 @@
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_ig7tw")
+
+[node name="BackGround" type="Sprite2D" parent="."]
+position = Vector2(576.99994, 324.00003)
+scale = Vector2(0.6041666, 0.59444445)
+texture = ExtResource("2_vivmo")
 
 [node name="DebugOverlay" type="CanvasLayer" parent="."]
 
