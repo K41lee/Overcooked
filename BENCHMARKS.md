@@ -37,12 +37,6 @@ Mesurer quantitativement l'amélioration de performance en augmentant le nombre 
 4. Attendre 3 minutes (180 secondes)
 5. Noter les résultats affichés dans la console
 
-### Méthode 2 : Via Script Automatique
-```bash
-cd /home/etudiant/Bureau/Projet/Overcooked
-./run_benchmarks.sh
-```
-
 Le script lance automatiquement les 3 benchmarks en séquence et affiche les résultats.
 
 ## 📈 Métriques Mesurées
