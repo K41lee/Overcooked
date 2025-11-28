@@ -300,8 +300,9 @@ func _start_action(node: Node2D, act: String) -> void:
 	target = node
 	action = act
 	is_busy = true
+	is_animation_locked = false  # Déverrouiller l'animation quand on commence une nouvelle action
 
-	# Déterminer ce qu’on tient
+	# Déterminer ce qu'on tient
 	var obj = ""
 	if held_ingredient != null and "type" in held_ingredient:
 		obj = held_ingredient.type
@@ -395,7 +396,6 @@ func _perform_action() -> void:
 							ing.position = Vector2.ZERO
 							held_ingredient = ing
 							_update_label("Tient " + obj)
-							update_anim("idle")
 							await get_tree().create_timer(action_delay).timeout
 
 					# release the station reservation after retrieving (or even if nothing was returned)
@@ -420,7 +420,6 @@ func _perform_action() -> void:
 							ing2.position = Vector2.ZERO
 							held_ingredient = ing2
 							_update_label("Tient " + obj)
-							update_anim("idle")
 							await get_tree().create_timer(action_delay).timeout
 
 					# release the station reservation after retrieving (or even if nothing was returned)
