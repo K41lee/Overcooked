@@ -536,6 +536,30 @@ func _perform_action() -> void:
 				# Clear held_reservation after successful delivery
 				if held_reservation == target:
 					held_reservation = null
+		else:
+			# Livraison refusée (mauvaise recette, assiette vide, etc.)
+			print("❌ Agent%d: Livraison REFUSÉE — assiette rejetée par zone_livraison" % agent_id)
+			_update_label("Livraison refusée!")
+			
+			# Libérer la réservation de la zone de livraison
+			if target and target.has_method("release"):
+				target.release(agent_id)
+				if held_reservation == target:
+					held_reservation = null
+			
+			# Annuler toutes les actions restantes car la recette est invalide
+			print("⚠️ Agent%d: Annulation de la recette en cours (invalide)" % agent_id)
+			action_queue.clear()
+			
+			# Détruire l'assiette rejetée
+			if held_ingredient:
+				held_ingredient.queue_free()
+				held_ingredient = null
+			
+			# Signaler l'échec au main
+			recipe_completed.emit()
+			
+			return  # Sortir sans continuer vers "next action"
 
 	# ✅ Action terminée — clear state et passer à la suivante
 	current_action_entry = null
@@ -567,15 +591,19 @@ func make_recipe(recipe: Dictionary, table: String = "TableTravail1") -> void:
 
 		actions.append(["pickup", t])
 
+		# Traiter les ingrédients selon leur état requis
 		if s == "chopped":
+			# Couper l'ingrédient
 			actions.append(["drop", "TableCoupe"])
 			actions.append(["pickup", "TableCoupe"])
-
-		if s == "cooked" and (not recipe.has("cook") or recipe["cook"] == false):
+		elif s == "cooked" and (not recipe.has("cook") or recipe["cook"] == false):
+			# Cuire l'ingrédient (sans coupe préalable)
 			actions.append(["drop", "Fourneau"])
 			actions.append(["pickup", "Fourneau"])
+		# Si l'état est "raw", on garde l'ingrédient tel quel
 
-		actions.append(["drop", table])  # déposer l’ingrédient dans l’assiette
+		# Déposer l'ingrédient préparé dans l'assiette
+		actions.append(["drop", table])
 
 	# 3. Quand tous les ingrédients sont posés
 	if recipe.has("cook") and recipe["cook"]:

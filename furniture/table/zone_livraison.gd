@@ -46,17 +46,22 @@ func receive_ingredient(ingredient: Node2D, agent_id: int = -1) -> bool:
 				print("✅ Recette validée :", expected.get("name", "inconnue"))
 				main_node.add_score(100)  # +100 points pour succès
 				ingredient.queue_free()
+				return true  # Livraison acceptée
 			else:
 				print("❌ Mauvaise recette... Attendu:", expected.get("name", "?"))
+				print("   Contenu reçu:", content)
 				main_node.add_score(-50)  # -50 points pour échec
-				ingredient.queue_free()
+				# Ne pas détruire l'assiette, laisser l'agent la reprendre
+				return false  # Livraison refusée
 		else:
-			print("❌ Assiette sans recette attendue")
-			ingredient.queue_free()
+			print("❌ Assiette sans recette attendue (expected_recipe vide ou absent)")
+			# Ne pas détruire l'assiette
+			return false  # Livraison refusée
 	else:
 		print("❌ Ce n'est pas une assiette")
+		return false  # Refuser les non-assiettes
 	
-	return true
+	return false  # Sécurité: refuser par défaut
 
 func _check_recipe_match(content: Array, recipe: Dictionary, plate: Node2D) -> bool:
 	"""Vérifie si le contenu de l'assiette correspond à la recette attendue"""
