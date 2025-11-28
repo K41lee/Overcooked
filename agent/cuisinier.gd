@@ -15,6 +15,7 @@ extends CharacterBody2D
 @export var agent_avoidance_radius: float = 40.0
 @export var agent_avoidance_force: float = 100.0
 
+
 var held_ingredient: Node2D = null
 @onready var hand_point: Marker2D = $HandPoint
 @onready var action_label: Label = $ActionLabel
