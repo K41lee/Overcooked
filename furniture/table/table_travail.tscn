@@ -6,6 +6,7 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_nckmi"]
 
 [node name="table_travail" type="Node2D"]
+scale = Vector2(0.7, 0.7)
 script = ExtResource("1_3eme2")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]

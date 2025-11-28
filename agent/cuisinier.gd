@@ -4,6 +4,17 @@ extends CharacterBody2D
 
 @export var agent_id: int = 0
 
+# Retry/backoff configuration (Phase C.1)
+@export var retry_initial_backoff: float = 0.5
+@export var retry_multiplier: float = 2.0
+@export var retry_max_backoff: float = 4.0
+@export var retry_max_retries: int = 5
+@export var action_timeout: float = 30.0
+
+# Navigation anti-collision
+@export var agent_avoidance_radius: float = 40.0
+@export var agent_avoidance_force: float = 100.0
+
 var held_ingredient: Node2D = null
 @onready var hand_point: Marker2D = $HandPoint
 @onready var action_label: Label = $ActionLabel
@@ -13,27 +24,42 @@ var target: Node2D = null
 var action: String = ""
 var interact_range: float = 16.0
 
+# Hold semantics: track reserved resource during movement
+var held_reservation: Node2D = null  # Resource reserved and held during movement
+
+# Cancellation API: track action IDs for selective cancellation
+var next_action_id: int = 0
+signal action_cancelled(action_id, reason)
+signal recipe_completed()  # Émis quand toutes les actions d'une recette sont terminées
+
 var action_queue: Array = []
 var is_busy: bool = false
+var current_action_entry = null
+var current_recipe: Dictionary = {}  # Recette en cours de préparation
 @export var action_delay: float = 1.0
 @export var cut_time: float = 6.0
 @export var cook_time: float = 10.0
 
 func _physics_process(delta: float) -> void:
-	if target != null:
+	if target != null and is_busy:
 		var dir = (target.global_position - global_position)
 		if dir.length() > interact_range:
-			velocity = dir.normalized() * speed
+			# Moving towards target — reservation held in held_reservation
+			var desired_velocity = dir.normalized() * speed
+			
+			# Évitement des autres agents
+			var avoidance = _calculate_agent_avoidance()
+			velocity = desired_velocity + avoidance
+			
+			# Limiter la vitesse pour ne pas dépasser speed
+			if velocity.length() > speed:
+				velocity = velocity.normalized() * speed
 		else:
+			# Reached target — perform action (async)
 			velocity = Vector2.ZERO
-			_perform_action()
-			target = null
-			action = ""
-			is_busy = false
-
-			var t = get_tree().create_timer(0.1)
-			await t.timeout
-			_process_next_action()
+			is_busy = false  # Prevent re-triggering during async action
+			_perform_action()  # This will call _process_next_action() when done
+			return
 	else:
 		velocity = Vector2.ZERO
 
@@ -53,6 +79,9 @@ func _ready() -> void:
 	# Register ourselves if manager supports it
 	if agent_manager and agent_manager.has_method("register_agent"):
 		agent_manager.register_agent(self)
+	
+	# Petit délai aléatoire au démarrage pour désynchroniser les agents
+	await get_tree().create_timer(randf() * 0.3).timeout
 
 func _exit_tree() -> void:
 	if agent_manager and agent_manager.has_method("unregister_agent"):
@@ -97,14 +126,14 @@ func pickup(target_name: String) -> void:
 		# If AgentManager was used, it's already reserved. Otherwise try to reserve directly.
 		if not (agent_manager and agent_manager.has_method("get_nearest_free_and_reserve")):
 			if node.has_method("reserve"):
-				if not node.reserve(agent_id):
-					print("⚠️ Can't reserve ", node.name, " — retry later")
-					# simple backoff + requeue
-					await get_tree().create_timer(0.5).timeout
-					queue_actions([["pickup", target_name]])
-					return
+					if not node.reserve(agent_id):
+						print("⚠️ Can't reserve ", node.name, " — deferring with backoff")
+						await _requeue_with_backoff_for("pickup", target_name)
+						return
 		
 		print("🎯 Agent: pickup " + target_name)
+		# Mark this resource as held during movement
+		held_reservation = node
 		_start_action(node, "pickup")
 	else:
 		print("⚠️ Pickup impossible, noeud non trouvé : " + target_name)
@@ -126,31 +155,30 @@ func drop(station: String) -> void:
 						print("AgentManager fallback: direct node found but reserve failed for ", direct.name)
 						if agent_manager and agent_manager.has_method("debug_log_reservations"):
 							agent_manager.debug_log_reservations(station)
-						await get_tree().create_timer(0.5).timeout
-						queue_actions([["drop", station]])
-						return
+							await _requeue_with_backoff_for("drop", station)
+							return
 				else:
 					# node exists and has no reservation API — accept it
 					node = direct
 			else:
-				print("AgentManager: no node found via manager for '", station, "' and no direct node available — retry")
-				if agent_manager and agent_manager.has_method("debug_log_reservations"):
-					agent_manager.debug_log_reservations(station)
-				await get_tree().create_timer(0.5).timeout
-				queue_actions([["drop", station]])
-				return
+						print("AgentManager: no node found via manager for '", station, "' and no direct node available — retry")
+						if agent_manager and agent_manager.has_method("debug_log_reservations"):
+							agent_manager.debug_log_reservations(station)
+						await _requeue_with_backoff_for("drop", station)
+						return
 	else:
 		node = _find_node(station)
 		if node:
 			if node.has_method("reserve"):
 				if not node.reserve(agent_id):
-					print("⚠️ Can't reserve ", node.name, " — retry later")
-					await get_tree().create_timer(0.5).timeout
-					queue_actions([["drop", station]])
-					return
+							print("⚠️ Can't reserve ", node.name, " — deferring with backoff")
+							await _requeue_with_backoff_for("drop", station)
+							return
 
 	if node:
 		print("🎯 Agent: drop on " + station)
+		# Mark this resource as held during movement
+		held_reservation = node
 		_start_action(node, "drop")
 
 
@@ -191,23 +219,20 @@ func deliver() -> void:
 					# direct node exists but has no reserve API — accept it
 					node = direct
 				if node == null:
-					print("⚠️ Can't reserve delivery zone via AgentManager or direct fallback — retry later")
-					await get_tree().create_timer(0.5).timeout
-					queue_actions([["deliver"]])
-					return
+							print("⚠️ Can't reserve delivery zone via AgentManager or direct fallback — retry later")
+							await _requeue_with_backoff_for("deliver")
+							return
 			else:
 				print("⚠️ Can't reserve delivery zone via AgentManager and node not found in scene — retry later")
-				await get_tree().create_timer(0.5).timeout
-				queue_actions([["deliver"]])
+				await _requeue_with_backoff_for("deliver")
 				return
 	else:
 		# Manager unavailable; try direct lookup and provide rich logging
 		node = _find_node("ZoneLivraison")
 		if node == null:
-			print("⚠️ Delivery zone node not found in scene (ZoneLivraison)")
-			await get_tree().create_timer(0.5).timeout
-			queue_actions([["deliver"]])
-			return
+				print("⚠️ Delivery zone node not found in scene (ZoneLivraison)")
+				await _requeue_with_backoff_for("deliver")
+				return
 		# if node exists, inspect reservation API
 		print("Agent: direct delivery node found:", node, "has reserve:", node.has_method("reserve"))
 		if node.has_method("reserve"):
@@ -219,12 +244,13 @@ func deliver() -> void:
 				print("⚠️ Can't reserve delivery zone — currently held by:", holder)
 				if agent_manager and agent_manager.has_method("debug_log_reservations"):
 					agent_manager.debug_log_reservations("ZoneLivraison")
-				await get_tree().create_timer(0.5).timeout
-				queue_actions([["deliver"]])
+				await _requeue_with_backoff_for("deliver")
 				return
 
 	if node:
 		print("🎯 Agent: deliver plate")
+		# Mark this resource as held during movement
+		held_reservation = node
 		_start_action(node, "deliver")
 
 
@@ -234,7 +260,22 @@ func deliver() -> void:
 
 func queue_actions(actions: Array) -> void:
 	for act in actions:
-		action_queue.append(act)
+		var entry = {}
+		# accept either array-style ["pickup", "tomate"] or dict {'act':..., 'arg':..., 'attempts':N}
+		if typeof(act) == TYPE_DICTIONARY:
+			entry = act.duplicate()  # duplicate to avoid modifying original
+		else:
+			var a = act
+			var name = a[0]
+			var arg = a[1] if a.size() > 1 else ""
+			entry = {'act': name, 'arg': arg, 'attempts': 0}
+		
+		# Assign unique ID if not already present
+		if not entry.has('id'):
+			entry['id'] = next_action_id
+			next_action_id += 1
+		
+		action_queue.append(entry)
 	if not is_busy:
 		_process_next_action()
 
@@ -243,10 +284,12 @@ func _process_next_action() -> void:
 	if action_queue.size() > 0:
 		var next = action_queue.pop_front()
 		print("➡️ Prochaine action: ", next)
-		var act = next[0]
-		var arg = next[1] if next.size() > 1 else ""
+		# next is a dict {'act','arg','attempts'}
+		current_action_entry = next
+		var act = next.get('act', "")
+		var arg = next.get('arg', "")
 
-		# ✅ attendre action_delay avant d'enchaîner
+		# attendre action_delay avant d'enchaîner
 		await get_tree().create_timer(action_delay).timeout
 
 		match act:
@@ -257,8 +300,10 @@ func _process_next_action() -> void:
 			"deliver":
 				deliver()
 	else:
-		print("✅ Agent: toutes les actions sont terminées !")
+		print("✅ Agent%d: toutes les actions sont terminées !" % agent_id)
 		_update_label("Idle")
+		current_recipe = {}  # Réinitialiser la recette
+		recipe_completed.emit()  # Notifier main.gd
 
 
 # ---------------------------
@@ -298,6 +343,10 @@ func _start_action(node: Node2D, act: String) -> void:
 	target = node
 	action = act
 	is_busy = true
+
+	# Start an action timeout monitor for this action (runs detached)
+	if current_action_entry != null:
+		call_deferred("_start_action_timeout_monitor", current_action_entry)
 
 	# Déterminer ce qu’on tient
 	var obj = ""
@@ -342,10 +391,17 @@ func _perform_action() -> void:
 			# release reservation on the source (spawner/pile) if supported
 			if target and target.has_method("release"):
 				target.release(agent_id)
+				# Clear held_reservation after successful pickup and release
+				if held_reservation == target:
+					held_reservation = null
 
 			var label = "objet"
 			if "type" in held_ingredient:
 				label = held_ingredient.type
+			
+			# Si c'est une assiette et qu'on a une recette en cours, l'assigner à l'assiette
+			if label == "plate" and not current_recipe.is_empty() and "expected_recipe" in held_ingredient:
+				held_ingredient.expected_recipe = current_recipe.duplicate()
 
 			print("👉 Agent: a ramassé " + label)
 
@@ -394,6 +450,9 @@ func _perform_action() -> void:
 					# release the station reservation after retrieving (or even if nothing was returned)
 					if station and station.has_method("release"):
 						station.release(agent_id)
+						# Clear held_reservation for cutting station
+						if held_reservation == station:
+							held_reservation = null
 
 				# ----- Cas : Fourneau -----
 				elif target.name.begins_with("Fourneau"):
@@ -415,6 +474,9 @@ func _perform_action() -> void:
 					# release the station reservation after retrieving (or even if nothing was returned)
 					if station and station.has_method("release"):
 						station.release(agent_id)
+						# Clear held_reservation for cooking station
+						if held_reservation == station:
+							held_reservation = null
 
 				# ----- Cas : simple table -----
 				else:
@@ -427,6 +489,10 @@ func _perform_action() -> void:
 					# so the agent can assemble the plate. Only release for other tables.
 					if target and target.has_method("release") and not target.name.begins_with("TableTravail"):
 						target.release(agent_id)
+						# Clear held_reservation for non-TableTravail tables
+						if held_reservation == target:
+							held_reservation = null
+					# For TableTravail, keep held_reservation active for assembly
 
 
 	# ----- DELIVER -----
@@ -455,13 +521,27 @@ func _perform_action() -> void:
 			# release delivery zone reservation if any
 			if target and target.has_method("release"):
 				target.release(agent_id)
+				# Clear held_reservation after successful delivery
+				if held_reservation == target:
+					held_reservation = null
+
+	# ✅ Action terminée — clear state et passer à la suivante
+	current_action_entry = null
+	target = null
+	action = ""
+	
+	# Small delay before next action
+	await get_tree().create_timer(0.1).timeout
+	_process_next_action()
 
 
 # ---------------------------
-# CONSTRUCTION D’UNE RECETTE
+# CONSTRUCTION D'UNE RECETTE
 # ---------------------------
 
 func make_recipe(recipe: Dictionary, table: String = "TableTravail1") -> void:
+	# Stocker la recette en cours
+	current_recipe = recipe
 	var actions: Array = []
 
 	# 1. Prendre une assiette et la poser sur une table
@@ -507,6 +587,152 @@ func make_recipe(recipe: Dictionary, table: String = "TableTravail1") -> void:
 # ---------------------------
 # UTILS
 # ---------------------------
+
+func cancel_action(action_id: int) -> bool:
+	"""Cancel a specific action in the queue by its ID.
+	Returns true if found and cancelled, false otherwise."""
+	for i in range(action_queue.size()):
+		if action_queue[i].get('id') == action_id:
+			var cancelled = action_queue[i]
+			action_queue.remove_at(i)
+			print("🚫 Cancelled action:", cancelled.get('act'), cancelled.get('arg'), "(ID:", action_id, ")")
+			emit_signal("action_cancelled", action_id, "user_request")
+			return true
+	
+	# Check if it's the currently executing action
+	if current_action_entry and current_action_entry.get('id') == action_id:
+		print("🚫 Cancelling currently executing action (ID:", action_id, ")")
+		_cancel_current_action(current_action_entry, "user_cancel")
+		return true
+	
+	return false
+
+
+func cancel_all_actions() -> void:
+	"""Cancel all queued actions and reset agent state.
+	Releases any held reservations."""
+	var cancelled_count = action_queue.size()
+	
+	# Emit signal for each cancelled action
+	for entry in action_queue:
+		emit_signal("action_cancelled", entry.get('id'), "cancel_all")
+	
+	# Clear the queue
+	action_queue.clear()
+	
+	# Cancel current action if any
+	if is_busy and current_action_entry:
+		_cancel_current_action(current_action_entry, "cancel_all")
+		cancelled_count += 1
+	else:
+		# If not busy, still clean up any held reservations
+		if held_reservation and held_reservation.has_method("release"):
+			held_reservation.release(agent_id)
+			held_reservation = null
+		
+		if target and target.has_method("release"):
+			target.release(agent_id)
+			target = null
+	
+	is_busy = false
+	current_action_entry = null
+	_update_label("Idle")
+	
+	print("🚫 Cancelled all actions. Total:", cancelled_count)
+
+
+func get_action_queue_info() -> Array:
+	"""Return info about queued actions for debugging/UI.
+	Returns array of dicts with 'id', 'act', 'arg', 'attempts'."""
+	var info = []
+	for entry in action_queue:
+		info.append({
+			'id': entry.get('id', -1),
+			'act': entry.get('act', ''),
+			'arg': entry.get('arg', ''),
+			'attempts': entry.get('attempts', 0)
+		})
+	return info
+
+
+func _requeue_with_backoff_for(act_name: String, arg: String = "") -> void:
+	# Uses exponential backoff and a per-action max retry limit.
+	var attempts = 0
+	if current_action_entry and current_action_entry.has("attempts"):
+		attempts = int(current_action_entry.get("attempts")) + 1
+	else:
+		attempts = 1
+
+	if attempts > retry_max_retries:
+		print("⚠️ Agent: max retries (", retry_max_retries, ") reached for action:", act_name, arg)
+		current_action_entry = null
+		_update_label("Idle")
+		return
+
+	var delay = min(retry_initial_backoff * pow(retry_multiplier, attempts - 1), retry_max_backoff)
+	print("⏱️ Requeueing action:", act_name, arg, "in", delay, "s (attempt", attempts, ")")
+	await get_tree().create_timer(delay).timeout
+	var entry = {'act': act_name, 'arg': arg, 'attempts': attempts}
+	queue_actions([entry])
+
+
+func _start_action_timeout_monitor(entry) -> void:
+	# Detached monitor: waits action_timeout seconds and cancels the action if it is still the current one.
+	var t = get_tree().create_timer(action_timeout)
+	await t.timeout
+	# If the same entry is still current and agent is busy, cancel it
+	if current_action_entry == entry and is_busy:
+		print("⏳ Action timeout: cancelling action", entry)
+		_cancel_current_action(entry, "timeout")
+
+
+func _cancel_current_action(entry, reason: String = "") -> void:
+	print("❌ Cancel current action:", entry, "reason:", reason)
+	# Restore current_action_entry so _requeue_with_backoff_for can compute the next attempt count
+	current_action_entry = entry
+
+	# Release reservation on the target if supported
+	if target and target.has_method("release"):
+		# best-effort: release using our agent_id
+		target.release(agent_id)
+	
+	# Also release held_reservation if present (might differ from target in some cases)
+	if held_reservation and held_reservation.has_method("release"):
+		if held_reservation != target:  # avoid double-release
+			held_reservation.release(agent_id)
+		held_reservation = null
+
+	# Clear local state
+	target = null
+	is_busy = false
+	_update_label("Idle")
+
+	# Requeue the action with backoff (this will increment attempts)
+	_requeue_with_backoff_for(entry.get('act', ''), entry.get('arg', ''))
+
+
+func _calculate_agent_avoidance() -> Vector2:
+	"""Calcule une force de répulsion pour éviter les autres agents proches"""
+	var avoidance = Vector2.ZERO
+	
+	if not agent_manager or not agent_manager.has_method("get_registered_agents"):
+		return avoidance
+	
+	var all_agents = agent_manager.get_registered_agents()
+	for other_agent in all_agents:
+		if other_agent == self or other_agent == null:
+			continue
+		
+		var distance_vec = global_position - other_agent.global_position
+		var distance = distance_vec.length()
+		
+		# Si un autre agent est trop proche, appliquer une force de répulsion
+		if distance < agent_avoidance_radius and distance > 0:
+			var force_strength = (1.0 - distance / agent_avoidance_radius) * agent_avoidance_force
+			avoidance += distance_vec.normalized() * force_strength
+	
+	return avoidance
+
 
 func _find_node(name: String) -> Node2D:
 	var root = get_tree().current_scene

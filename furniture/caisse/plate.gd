@@ -3,6 +3,7 @@ extends Node2D
 var type: String = "plate"
 var ingredients: Array = []
 var state: String = "raw"
+var expected_recipe: Dictionary = {}  # La recette attendue pour cette assiette
 
 @onready var place_point: Marker2D = $PlacePoint
 

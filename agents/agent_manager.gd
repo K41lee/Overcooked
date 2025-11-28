@@ -11,6 +11,13 @@ var agents := {} # id -> node
 @export var watchdog_enabled: bool = true
 @export var watchdog_interval: float = 3.0 # seconds between scans
 @export var reserve_timeout_seconds: int = 60 # optional: nodes may expose reserved_at to enable age-based release
+@export var stats_log_interval: float = 30.0 # Log stats every N seconds (0 = disabled)
+
+# Watchdog metrics
+var watchdog_scans: int = 0
+var watchdog_releases: int = 0
+var watchdog_active_reservations: int = 0
+var last_stats_log_time: float = 0.0
 
 func _ready() -> void:
 	# start the watchdog loop if enabled
@@ -32,6 +39,14 @@ func _watchdog_loop() -> void:
 	# This is intentionally simple and non-blocking: it yields on a timer between scans.
 	while watchdog_enabled:
 		_scan_and_release_stale()
+		
+		# Log stats periodically
+		if stats_log_interval > 0:
+			var now = Time.get_ticks_msec() / 1000.0
+			if now - last_stats_log_time >= stats_log_interval:
+				_log_watchdog_stats()
+				last_stats_log_time = now
+		
 		var t = get_tree().create_timer(watchdog_interval)
 		await t.timeout
 
@@ -48,6 +63,10 @@ func unregister_agent(agent_node: Node) -> void:
 
 func find_agent_by_id(id: int) -> Node:
 	return agents.get(id, null)
+
+func get_registered_agents() -> Array:
+	"""Retourne un tableau de tous les agents enregistrés"""
+	return agents.values()
 
 func get_nearest_free_and_reserve(group_name: String, position: Vector2, agent_id: int) -> Node:
 	# Collect candidates in the group
@@ -111,23 +130,24 @@ func get_nearest_free_and_reserve(group_name: String, position: Vector2, agent_i
 					var ok = single.reserve(agent_id)
 					if ok:
 						return single
-					else:
-						# Inspect holder; if holder agent is not registered, consider it stale and release
-						var holder = null
-						if "reserved_by" in single:
-							holder = single.reserved_by
-							print("AgentManager: reserve failed on node found by exact path. node=", single.name, " reserved_by=", str(holder), " for agent=", agent_id)
-							if holder != null and holder in agents:
-								# holder still active — cannot steal
-								return null
-							else:
-								print("AgentManager: holder " , str(holder), " not registered — releasing stale reservation and retrying")
-								if single.has_method('release') and holder != null:
-									single.release(holder)
-								# try to reserve again
-								if single.reserve(agent_id):
-									return single
-								return null
+				else:
+					# Inspect holder; check age of reservation to determine if stale
+					var holder = null
+					if "reserved_by" in single:
+						holder = single.reserved_by
+						print("AgentManager: reserve failed on node found by exact path. node=", single.name, " reserved_by=", str(holder), " for agent=", agent_id)
+						if holder != null:
+							# Check age if timestamp available
+							if "reserved_at" in single:
+								var age = Time.get_ticks_msec() / 1000.0 - single.reserved_at
+								if age > reserve_timeout_seconds:
+									print("AgentManager: reservation aged %.1fs > %ds — releasing" % [age, reserve_timeout_seconds])
+									if single.has_method('release'):
+										single.release(holder)
+									if single.reserve(agent_id):
+										return single
+								# Reservation fresh — cannot steal
+							return null
 				return single
 
 			# fallback: recursive search by name (case-insensitive)
@@ -143,14 +163,17 @@ func get_nearest_free_and_reserve(group_name: String, position: Vector2, agent_i
 						if "reserved_by" in found:
 							holder2 = found.reserved_by
 						print("AgentManager: reserve failed on node found by recursive search. node=", found.name, " reserved_by=", str(holder2), " for agent=", agent_id)
-						if holder2 != null and holder2 in agents:
-							return null
-						else:
-							print("AgentManager: holder ", str(holder2), " not registered — releasing stale reservation and retrying")
-							if found.has_method('release') and holder2 != null:
-								found.release(holder2)
-							if found.reserve(agent_id):
-								return found
+						if holder2 != null:
+							if "reserved_at" in found:
+								var age2 = Time.get_ticks_msec() / 1000.0 - found.reserved_at
+								if age2 > reserve_timeout_seconds:
+									print("AgentManager: holder %d reservation aged %.1fs > %ds — releasing and retrying" % [holder2, age2, reserve_timeout_seconds])
+									if found.has_method('release'):
+										found.release(holder2)
+									if found.reserve(agent_id):
+										return found
+								else:
+									return null
 							return null
 				return found
 		print("AgentManager: no nodes in group '", group_name, "' and no matching node in scene")
@@ -180,20 +203,21 @@ func get_nearest_free_and_reserve(group_name: String, position: Vector2, agent_i
 			if ok:
 				return cand
 			else:
-				# If reserve failed, check if the holder is still registered; if not, release and retry
+				# If reserve failed, check age of reservation to determine if stale
 				var h = null
 				if "reserved_by" in cand:
 					h = cand.reserved_by
 					print("AgentManager: candidate reserve failed for ", cand.name, ", reserved_by=", str(h))
-					if h != null and h in agents:
-						continue
-					else:
-						print("AgentManager: releasing stale reservation held by ", str(h), " on ", cand.name)
-						if cand.has_method('release') and h != null:
-							cand.release(h)
-						# try to reserve again
-						if cand.reserve(agent_id):
-							return cand
+					if h != null:
+						if "reserved_at" in cand:
+							var age3 = Time.get_ticks_msec() / 1000.0 - cand.reserved_at
+							if age3 > reserve_timeout_seconds:
+								print("AgentManager: holder %d reservation on %s aged %.1fs > %ds — releasing and retrying" % [h, cand.name, age3, reserve_timeout_seconds])
+								if cand.has_method('release'):
+									cand.release(h)
+								if cand.reserve(agent_id):
+									return cand
+							# Reservation still fresh — skip this candidate
 						continue
 		else:
 			# If resource has no reserve, consider it available and return it
@@ -281,6 +305,7 @@ func _add_groups(node: Node) -> void:
 func _scan_and_release_stale() -> void:
 	# Scan the current scene for nodes that have a 'reserved_by' property or 'is_reserved' method
 	# and release reservations held by unregistered agents or that exceed reserve_timeout_seconds.
+	watchdog_scans += 1
 	var tree = get_tree()
 	if tree == null:
 		return
@@ -288,6 +313,8 @@ func _scan_and_release_stale() -> void:
 	if scene == null:
 		return
 
+	# Reset active reservations counter before scan
+	watchdog_active_reservations = 0
 	_scan_node_for_stale(scene)
 
 
@@ -300,28 +327,81 @@ func _scan_node_for_stale(parent: Node) -> void:
 		if "reserved_by" in child:
 			var holder = child.reserved_by
 			if holder != -1 and holder != null:
-				# If holder not registered, release stale reservation
-				if not (holder in agents):
-					if child.has_method('release'):
-						print("AgentManager.watchdog: releasing stale reservation on", child.name, "held by", str(holder))
-						child.release(holder)
+				# Phase E: Use reserved_at timestamp to determine staleness (age-based release)
+				if "reserved_at" in child:
+					var age = Time.get_ticks_msec() / 1000.0 - child.reserved_at
+					if age > reserve_timeout_seconds:
+						if child.has_method('release'):
+							print("AgentManager.watchdog: releasing AGED reservation on %s held by %d (age=%.1fs)" % [child.name, holder, age])
+							child.release(holder)
+							watchdog_releases += 1
+						else:
+							print("AgentManager.watchdog: node %s has aged holder %d but no release() method" % [child.name, holder])
 					else:
-						print("AgentManager.watchdog: node", child.name, "has stale holder", str(holder), "but no release() method")
+						# Reservation active et valide
+						watchdog_active_reservations += 1
+				else:
+					# Fallback: no reserved_at, check registration (old behavior, but with warning)
+					if not (holder in agents):
+						if child.has_method('release'):
+							print("AgentManager.watchdog: releasing reservation on %s held by unregistered %d (no timestamp available)" % [child.name, holder])
+							child.release(holder)
+							watchdog_releases += 1
+					else:
+						watchdog_active_reservations += 1
 
 
 		# if node provides is_reserved() but not reserved_by property, try to inspect via methods
 		elif child.has_method('is_reserved') and child.has_method('release'):
-			# If reserved and we can't find holder, attempt to release if holder unregistered via debug method
+			# If reserved and we can't find holder, attempt to release if aged
 			if child.is_reserved():
-				# try to inspect reserved_by meta or property via get
+				# try to inspect reserved_by and reserved_at
 				var holder2 = null
 				if "reserved_by" in child:
 					holder2 = child.reserved_by
 				elif child.has_method('get_meta') and child.has_meta('reserved_by'):
 					holder2 = child.get_meta('reserved_by')
-				if holder2 != null and not (holder2 in agents):
-					print("AgentManager.watchdog: releasing reserved node", child.name, "held by unregistered", str(holder2))
-					child.release(holder2)
+				
+				if holder2 != null:
+					if "reserved_at" in child:
+						var age2 = Time.get_ticks_msec() / 1000.0 - child.reserved_at
+						if age2 > reserve_timeout_seconds:
+							print("AgentManager.watchdog: releasing aged reserved node %s held by %d (age=%.1fs)" % [child.name, holder2, age2])
+							child.release(holder2)
+							watchdog_releases += 1
+						else:
+							watchdog_active_reservations += 1
+					elif not (holder2 in agents):
+						print("AgentManager.watchdog: releasing reserved node %s held by unregistered %d (no timestamp)" % [child.name, holder2])
+						child.release(holder2)
+						watchdog_releases += 1
+					else:
+						watchdog_active_reservations += 1
 
 		# recurse
 		_scan_node_for_stale(child)
+
+
+func _log_watchdog_stats() -> void:
+	"""Log watchdog statistics for monitoring and debugging."""
+	print("============================================================")
+	print("WATCHDOG STATS")
+	print("  Total scans: %d" % watchdog_scans)
+	print("  Total releases: %d" % watchdog_releases)
+	print("  Active reservations: %d" % watchdog_active_reservations)
+	print("  Registered agents: %d" % agents.size())
+	if watchdog_scans > 0:
+		var release_rate = (float(watchdog_releases) / float(watchdog_scans)) * 100.0
+		print("  Release rate: %.2f%%" % release_rate)
+	print("============================================================")
+
+
+func get_watchdog_stats() -> Dictionary:
+	"""Return watchdog metrics as dictionary for programmatic access."""
+	return {
+		"scans": watchdog_scans,
+		"releases": watchdog_releases,
+		"active_reservations": watchdog_active_reservations,
+		"registered_agents": agents.size(),
+		"release_rate": (float(watchdog_releases) / float(watchdog_scans)) if watchdog_scans > 0 else 0.0
+	}

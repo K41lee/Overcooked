@@ -7,6 +7,7 @@ extends Node2D
 # Reservation API (Phase A)
 # `reserved_by` holds the agent id that reserved this resource, -1 = free
 var reserved_by: int = -1
+var reserved_at: float = 0.0
 
 signal reservation_changed(reserved_by)
 
@@ -15,6 +16,7 @@ func reserve(agent_id: int) -> bool:
 	Returns true if reservation succeeded, false otherwise."""
 	if reserved_by == -1:
 		reserved_by = agent_id
+		reserved_at = Time.get_ticks_msec() / 1000.0
 		emit_signal("reservation_changed", reserved_by)
 		print("[Reservation] ", get_path(), " reserved by agent", reserved_by)
 		return true
@@ -27,6 +29,7 @@ func release(agent_id: int) -> void:
 	"""Release the reservation only if agent_id matches the holder."""
 	if reserved_by == agent_id:
 		reserved_by = -1
+		reserved_at = 0.0
 		emit_signal("reservation_changed", reserved_by)
 		print("[Reservation] ", get_path(), " released by agent", agent_id)
 

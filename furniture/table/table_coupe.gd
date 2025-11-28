@@ -5,11 +5,13 @@ var stored: Node2D = null
 
 # Reservation API (Phase A)
 var reserved_by: int = -1
+var reserved_at: float = 0.0
 signal reservation_changed(reserved_by)
 
 func reserve(agent_id: int) -> bool:
 	if reserved_by == -1:
 		reserved_by = agent_id
+		reserved_at = Time.get_ticks_msec() / 1000.0
 		emit_signal("reservation_changed", reserved_by)
 		print("[Reservation] ", get_path(), " reserved by agent", reserved_by)
 		return true
@@ -20,6 +22,7 @@ func reserve(agent_id: int) -> bool:
 func release(agent_id: int) -> void:
 	if reserved_by == agent_id:
 		reserved_by = -1
+		reserved_at = 0.0
 		emit_signal("reservation_changed", reserved_by)
 		print("[Reservation] ", get_path(), " released by agent", agent_id)
 func is_reserved() -> bool:

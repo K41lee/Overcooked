@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://c4xi1o2ptaunt" path="res://assets/PileAssiettes.png" id="3_whwog"]
 
 [node name="pile_assiettes" type="Node2D"]
+scale = Vector2(0.7, 0.7)
 script = ExtResource("1_101sn")
 plate_scene = ExtResource("2_6y23v")
 

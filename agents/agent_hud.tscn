@@ -1,0 +1,40 @@
+[gd_scene load_steps=2 format=3 uid="uid://agent_hud_scene"]
+
+[ext_resource type="Script" path="res://agents/agent_hud.gd" id="1"]
+
+[node name="AgentHUD" type="CanvasLayer"]
+script = ExtResource("1")
+
+[node name="Panel" type="Panel" parent="."]
+offset_right = 120.0
+offset_bottom = 80.0
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
+
+[node name="StatusLabel" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+text = "Agent0: Idle"
+theme_override_font_sizes/font_size = 10
+
+[node name="QueueLabel" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+text = "Queue: 0 | Next: —"
+theme_override_font_sizes/font_size = 9
+
+[node name="TargetLabel" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+text = "Target: —"
+theme_override_font_sizes/font_size = 9
+
+[node name="HeldLabel" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+text = "Holding: —"
+theme_override_font_sizes/font_size = 9
